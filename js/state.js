@@ -218,16 +218,23 @@ const State = {
     const { config, players } = gameState;
     const stats = {};
 
+    // 收集所有玩家已认领的角色
+    const claimedRoles = new Set(
+      Object.values(players).filter(p => p.role).map(p => p.role)
+    );
+
     ['goose', 'duck', 'neutral'].forEach(f => {
       const total = config.factions[f] || 0;
-      const open = config.openRoles.filter(r => getRoleFaction(r) === f);
-      const jumped = [];
+      const openNames = config.openRoles.filter(r => getRoleFaction(r) === f);
+      const open = openNames.map(r => ({ name: r, claimed: claimedRoles.has(r) }));
 
+      const jumpedNames = [];
       Object.values(players).forEach(p => {
-        if (p.role && getRoleFaction(p.role) === f && !open.includes(p.role)) {
-          if (!jumped.includes(p.role)) jumped.push(p.role);
+        if (p.role && getRoleFaction(p.role) === f && !openNames.includes(p.role)) {
+          if (!jumpedNames.includes(p.role)) jumpedNames.push(p.role);
         }
       });
+      const jumped = jumpedNames.map(r => ({ name: r, claimed: claimedRoles.has(r) }));
 
       const unknown = Math.max(0, total - open.length - jumped.length);
       stats[f] = { total, open, jumped, unknown };

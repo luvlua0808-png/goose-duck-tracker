@@ -4,42 +4,43 @@
 
 const ROLES = [
   // 🪿 鹅阵营 (15)
-  { name: '警长',     faction: 'goose' },
-  { name: '正义使者', faction: 'goose' },
-  { name: '工程师',   faction: 'goose' },
-  { name: '通灵者',   faction: 'goose' },
-  { name: '侦探',     faction: 'goose' },
-  { name: '星界行者', faction: 'goose' },
-  { name: '观鸟者',   faction: 'goose' },
-  { name: '跟踪者',   faction: 'goose' },
-  { name: '加拿大鹅', faction: 'goose' },
-  { name: '殡仪员',   faction: 'goose' },
-  { name: '模仿者',   faction: 'goose' },
-  { name: '复仇者',   faction: 'goose' },
-  { name: '士兵',     faction: 'goose' },
-  { name: '法医',     faction: 'goose' },
-  { name: '探测员',   faction: 'goose' },
+  { name: '警长',     faction: 'goose',   initials: 'jz'   },
+  { name: '正义使者', faction: 'goose',   initials: 'zysz' },
+  { name: '工程师',   faction: 'goose',   initials: 'gcs'  },
+  { name: '通灵者',   faction: 'goose',   initials: 'tlz'  },
+  { name: '侦探',     faction: 'goose',   initials: 'zt'   },
+  { name: '星界行者', faction: 'goose',   initials: 'xjxz' },
+  { name: '观鸟者',   faction: 'goose',   initials: 'gnz'  },
+  { name: '跟踪者',   faction: 'goose',   initials: 'gzz'  },
+  { name: '加拿大鹅', faction: 'goose',   initials: 'jnde' },
+  { name: '殡仪员',   faction: 'goose',   initials: 'byy'  },
+  { name: '模仿者',   faction: 'goose',   initials: 'mfz'  },
+  { name: '复仇者',   faction: 'goose',   initials: 'fcz'  },
+  { name: '士兵',     faction: 'goose',   initials: 'sb'   },
+  { name: '法医',     faction: 'goose',   initials: 'fy'   },
+  { name: '探测员',   faction: 'goose',   initials: 'tcy'  },
+  { name: '大白鹅',   faction: 'goose',   initials: 'dbe'  },
 
   // 🦆 鸭阵营 (10)
-  { name: '专业杀手', faction: 'duck' },
-  { name: '隐形鸭',   faction: 'duck' },
-  { name: '变形者',   faction: 'duck' },
-  { name: '爆炸王',   faction: 'duck' },
-  { name: '刺客',     faction: 'duck' },
-  { name: '食鸟鸭',   faction: 'duck' },
-  { name: '间谍',     faction: 'duck' },
-  { name: '巫医',     faction: 'duck' },
-  { name: '掠夺者',   faction: 'duck' },
-  { name: '狙击手',   faction: 'duck' },
+  { name: '专业杀手', faction: 'duck',    initials: 'zyss' },
+  { name: '隐形鸭',   faction: 'duck',    initials: 'yxy'  },
+  { name: '变形者',   faction: 'duck',    initials: 'bxz'  },
+  { name: '爆炸王',   faction: 'duck',    initials: 'bzw'  },
+  { name: '刺客',     faction: 'duck',    initials: 'ck'   },
+  { name: '食鸟鸭',   faction: 'duck',    initials: 'sny'  },
+  { name: '间谍',     faction: 'duck',    initials: 'jd'   },
+  { name: '巫医',     faction: 'duck',    initials: 'wy'   },
+  { name: '掠夺者',   faction: 'duck',    initials: 'ldz'  },
+  { name: '狙击手',   faction: 'duck',    initials: 'jjs'  },
 
   // 🕊️ 中立阵营 (7)
-  { name: '呆呆鸟',   faction: 'neutral' },
-  { name: '秃鹫',     faction: 'neutral' },
-  { name: '鸽子',     faction: 'neutral' },
-  { name: '鹈鹕',     faction: 'neutral' },
-  { name: '猎鹰',     faction: 'neutral' },
-  { name: '布谷鸟',   faction: 'neutral' },
-  { name: '锦鸡',     faction: 'neutral' },
+  { name: '呆呆鸟',   faction: 'neutral', initials: 'ddn'  },
+  { name: '秃鹫',     faction: 'neutral', initials: 'tj'   },
+  { name: '鸽子',     faction: 'neutral', initials: 'gz'   },
+  { name: '鹈鹕',     faction: 'neutral', initials: 'th'   },
+  { name: '猎鹰',     faction: 'neutral', initials: 'ly'   },
+  { name: '布谷鸟',   faction: 'neutral', initials: 'bgn'  },
+  { name: '锦鸡',     faction: 'neutral', initials: 'jj'   },
 ];
 
 const FACTION_META = {
@@ -180,9 +181,12 @@ function getRoleFaction(roleName) {
   return r ? r.faction : null;
 }
 
-// 模糊搜索角色
+// 模糊搜索角色（支持名字包含 + 拼音首字母前缀匹配）
 function searchRoles(query) {
   if (!query) return ROLES;
   const q = query.trim().toLowerCase();
-  return ROLES.filter(r => r.name.toLowerCase().includes(q));
+  return ROLES.filter(r =>
+    r.name.toLowerCase().includes(q) ||
+    (r.initials && r.initials.startsWith(q))
+  );
 }

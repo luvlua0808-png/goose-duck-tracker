@@ -39,9 +39,10 @@ const App = (() => {
     // 更新轮次显示
     _updateRoundBadge();
 
-    // 解锁导航按钮（游戏开始后）
+    // 解锁导航按钮（游戏开始后，切到init页也保持解锁）
     const { phase: statePhase } = State.get();
-    if (statePhase !== 'init') {
+    const gameEverStarted = statePhase !== 'init';
+    if (gameEverStarted || phase !== 'init') {
       NAV_BTNS.game.disabled    = false;
       NAV_BTNS.meeting.disabled = false;
     }
@@ -51,8 +52,8 @@ const App = (() => {
     if (phase === 'game')    Phase2.render();
     if (phase === 'meeting') Phase3.render();
 
-    // 保存阶段到状态
-    State.setPhase(phase);
+    // 只有切到游戏/会议页时才更新 state phase（init页不覆盖，保留游戏进行中的状态）
+    if (phase !== 'init') State.setPhase(phase);
   }
 
   function _updateRoundBadge() {
@@ -63,9 +64,9 @@ const App = (() => {
   function _bindNavBtns() {
     Object.entries(NAV_BTNS).forEach(([phase, btn]) => {
       btn.addEventListener('click', () => {
-        const { phase: curPhase } = State.get();
-        // 初始化阶段未开始游戏时不允许跳转
-        if (curPhase === 'init' && phase !== 'init') return;
+        const { phase: statePhase } = State.get();
+        // 游戏从未开始时（state phase 仍是 init），不允许跳到游戏/会议页
+        if (statePhase === 'init' && phase !== 'init') return;
         switchPhase(phase);
       });
     });

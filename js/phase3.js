@@ -42,7 +42,7 @@ const Phase3 = (() => {
   function _buildCard(num, p, round) {
     const card = document.createElement('div');
     card.className = 'player-card' +
-      (p.alive ? '' : ' dead') +
+      (p.alive ? ' alive' : ' dead') +
       (p.faction ? ` faction-${p.faction}` : '');
     card.dataset.player = num;
 
@@ -317,8 +317,10 @@ const Phase3 = (() => {
     } else {
       roles.forEach(r => {
         const tag = document.createElement('span');
-        tag.className = `stat-tag ${tagClass}`;
-        tag.textContent = r;
+        // claimed=有玩家认领(亮色)，unclaimed=无人认领(暗色)
+        tag.className = `stat-tag ${tagClass} ${r.claimed ? 'claimed' : 'unclaimed'}`;
+        tag.textContent = r.name;
+        tag.title = r.claimed ? '已有玩家认领' : '暂无玩家认领';
         tags.appendChild(tag);
       });
     }

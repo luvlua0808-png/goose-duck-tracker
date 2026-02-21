@@ -14,7 +14,9 @@ const Phase1 = (() => {
   }
 
   function render() {
-    const { config } = State.get();
+    const { config, phase } = State.get();
+    const gameStarted = phase !== 'init';
+
     // 玩家人数
     document.getElementById('player-count-display').textContent = config.playerCount;
     // 地图按钮
@@ -28,6 +30,26 @@ const Phase1 = (() => {
     _updateFactionTotal();
     // 明牌角色
     _updateOpenRoleChips();
+
+    // 游戏已开始：锁定左栏，隐藏开始按钮，显示提示
+    const initLeft = document.querySelector('.init-left');
+    const startBtn = document.getElementById('btn-start-game');
+    if (gameStarted) {
+      initLeft.classList.add('init-left-locked');
+      startBtn.style.display = 'none';
+      if (!document.getElementById('init-locked-tip')) {
+        const tip = document.createElement('p');
+        tip.id = 'init-locked-tip';
+        tip.className = 'init-locked-tip';
+        tip.textContent = '⚠ 游戏进行中，基础配置已锁定';
+        initLeft.appendChild(tip);
+      }
+    } else {
+      initLeft.classList.remove('init-left-locked');
+      startBtn.style.display = '';
+      const tip = document.getElementById('init-locked-tip');
+      if (tip) tip.remove();
+    }
   }
 
   function _bindPlayerCount() {
@@ -87,6 +109,52 @@ const Phase1 = (() => {
     const container = document.getElementById('open-roles-container');
     container.innerHTML = '';
 
+    // 搜索框 + 清空按钮
+    const searchWrap = document.createElement('div');
+    searchWrap.className = 'open-roles-search-wrap';
+
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = '角色名或拼音首字母（jz=警长）';
+    searchInput.className = 'open-roles-search';
+
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'open-roles-search-clear';
+    clearBtn.textContent = '✕';
+    clearBtn.title = '清空搜索';
+    clearBtn.style.display = 'none';
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      clearBtn.style.display = 'none';
+      _filterChips('');
+      searchInput.focus();
+    });
+
+    function _filterChips(q) {
+      document.querySelectorAll('#open-roles-container .role-chip').forEach(chip => {
+        const nameMatch = chip.dataset.role.toLowerCase().includes(q);
+        const initialsMatch = (chip.dataset.initials || '').startsWith(q);
+        chip.style.display = (!q || nameMatch || initialsMatch) ? '' : 'none';
+      });
+      document.querySelectorAll('#open-roles-container .role-faction-group').forEach(group => {
+        const anyVisible = [...group.querySelectorAll('.role-chip')].some(c => c.style.display !== 'none');
+        group.style.display = anyVisible ? '' : 'none';
+      });
+    }
+
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.trim().toLowerCase();
+      clearBtn.style.display = q ? '' : 'none';
+      _filterChips(q);
+    });
+
+    searchWrap.appendChild(searchInput);
+    searchWrap.appendChild(clearBtn);
+    container.appendChild(searchWrap);
+
+    const groupsWrap = document.createElement('div');
+    groupsWrap.className = 'open-roles-groups';
+
     const groups = [
       { faction: 'goose',   icon: '🪿', label: '鹅阵营' },
       { faction: 'duck',    icon: '🦆', label: '鸭阵营' },
@@ -94,24 +162,50 @@ const Phase1 = (() => {
     ];
 
     groups.forEach(({ faction, icon, label }) => {
-      const roles = ROLES.filter(r => r.faction === faction);
+      const roles = ROLES.filter(r => r.faction === faction)
+        .sort((a, b) => (a.initials || '').localeCompare(b.initials || ''));
+
       const group = document.createElement('div');
       group.className = 'role-faction-group';
       group.innerHTML = `<div class="role-faction-label">${icon} ${label}</div>`;
-      const chips = document.createElement('div');
-      chips.className = 'role-chips';
+
+      // 按首字母分组
+      const letterMap = {};
       roles.forEach(role => {
-        const chip = document.createElement('span');
-        chip.className = 'role-chip';
-        chip.textContent = role.name;
-        chip.dataset.role = role.name;
-        chip.dataset.faction = faction;
-        chip.addEventListener('click', () => _toggleOpenRole(role.name, faction, chip));
-        chips.appendChild(chip);
+        const letter = (role.initials || '?')[0].toUpperCase();
+        if (!letterMap[letter]) letterMap[letter] = [];
+        letterMap[letter].push(role);
       });
-      group.appendChild(chips);
-      container.appendChild(group);
+
+      Object.keys(letterMap).sort().forEach(letter => {
+        const row = document.createElement('div');
+        row.className = 'role-letter-row';
+
+        const letterEl = document.createElement('span');
+        letterEl.className = 'role-letter-tag';
+        letterEl.textContent = letter;
+        row.appendChild(letterEl);
+
+        const chipsWrap = document.createElement('div');
+        chipsWrap.className = 'role-chips';
+        letterMap[letter].forEach(role => {
+          const chip = document.createElement('span');
+          chip.className = 'role-chip';
+          chip.textContent = role.name;
+          chip.dataset.role = role.name;
+          chip.dataset.faction = faction;
+          chip.dataset.initials = role.initials || '';
+          chip.addEventListener('click', () => _toggleOpenRole(role.name, faction, chip));
+          chipsWrap.appendChild(chip);
+        });
+        row.appendChild(chipsWrap);
+        group.appendChild(row);
+      });
+
+      groupsWrap.appendChild(group);
     });
+
+    container.appendChild(groupsWrap);
 
     _updateOpenRoleChips();
   }

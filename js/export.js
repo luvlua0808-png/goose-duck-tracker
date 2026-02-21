@@ -79,8 +79,8 @@ const Export = (() => {
     const FACTION_ICONS = { goose: '鹅', duck: '鸭', neutral: '中立' };
     ['goose', 'duck', 'neutral'].forEach(f => {
       const s = stats[f];
-      const openStr   = s.open.length   > 0 ? s.open.join('、')   : '无';
-      const jumpedStr = s.jumped.length > 0 ? s.jumped.join('、') : '无';
+      const openStr   = s.open.length   > 0 ? s.open.map(r => r.name).join('、')   : '无';
+      const jumpedStr = s.jumped.length > 0 ? s.jumped.map(r => r.name).join('、') : '无';
       lines.push(`${FACTION_ICONS[f]}：${s.total}人 | 明牌：${openStr} | 跳出：${jumpedStr} | 未知：${s.unknown}个`);
     });
 
@@ -117,6 +117,7 @@ const Export = (() => {
       document.getElementById('modal-end-game').classList.add('hidden');
       State.reset();
       App.switchPhase('init');
+      Phase1.render();
     });
   }
 

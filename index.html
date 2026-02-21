@@ -30,63 +30,68 @@
 
     <!-- ── 阶段一：初始化 ── -->
     <section id="phase-init" class="phase-section active">
-      <div class="init-container">
-        <h2 class="section-title">游戏配置</h2>
+      <div class="init-layout">
 
-        <!-- 玩家人数 -->
-        <div class="config-block">
-          <label class="config-label">玩家人数</label>
-          <div class="stepper">
-            <button class="stepper-btn" id="player-dec">−</button>
-            <span id="player-count-display" class="stepper-value">13</span>
-            <button class="stepper-btn" id="player-inc">+</button>
-          </div>
-        </div>
+        <!-- 左栏：基础配置 -->
+        <div class="init-left">
+          <h2 class="section-title">游戏配置</h2>
 
-        <!-- 地图选择 -->
-        <div class="config-block">
-          <label class="config-label">选择地图</label>
-          <div class="map-selector">
-            <button class="map-btn active" data-map="spaceship" id="map-spaceship">🚀 老妈鹅飞船</button>
-            <button class="map-btn" data-map="church" id="map-church">⛪ 鹅教堂</button>
-          </div>
-        </div>
-
-        <!-- 阵营配置 -->
-        <div class="config-block">
-          <label class="config-label">阵营人数配置</label>
-          <div class="faction-inputs">
-            <div class="faction-input-group">
-              <span class="faction-icon goose">🪿</span>
-              <label>鹅</label>
-              <input type="number" id="faction-goose" class="faction-num" min="0" value="8" />
-            </div>
-            <div class="faction-input-group">
-              <span class="faction-icon duck">🦆</span>
-              <label>鸭</label>
-              <input type="number" id="faction-duck" class="faction-num" min="0" value="3" />
-            </div>
-            <div class="faction-input-group">
-              <span class="faction-icon neutral">🕊️</span>
-              <label>中立</label>
-              <input type="number" id="faction-neutral" class="faction-num" min="0" value="2" />
-            </div>
-            <div class="faction-total">
-              合计：<span id="faction-total">13</span> / <span id="faction-max">13</span>
-              <span id="faction-error" class="error-msg hidden">⚠ 总和必须等于玩家人数</span>
+          <!-- 玩家人数 -->
+          <div class="config-block">
+            <label class="config-label">玩家人数</label>
+            <div class="stepper">
+              <button class="stepper-btn" id="player-dec">−</button>
+              <span id="player-count-display" class="stepper-value">13</span>
+              <button class="stepper-btn" id="player-inc">+</button>
             </div>
           </div>
+
+          <!-- 地图选择 -->
+          <div class="config-block">
+            <label class="config-label">选择地图</label>
+            <div class="map-selector">
+              <button class="map-btn active" data-map="spaceship" id="map-spaceship">🚀 老妈鹅飞船</button>
+              <button class="map-btn" data-map="church" id="map-church">⛪ 鹅教堂</button>
+            </div>
+          </div>
+
+          <!-- 阵营配置 -->
+          <div class="config-block">
+            <label class="config-label">阵营人数配置</label>
+            <div class="faction-inputs">
+              <div class="faction-input-group">
+                <span class="faction-icon goose">🪿</span>
+                <label>鹅</label>
+                <input type="number" id="faction-goose" class="faction-num" min="0" value="8" />
+              </div>
+              <div class="faction-input-group">
+                <span class="faction-icon duck">🦆</span>
+                <label>鸭</label>
+                <input type="number" id="faction-duck" class="faction-num" min="0" value="3" />
+              </div>
+              <div class="faction-input-group">
+                <span class="faction-icon neutral">🕊️</span>
+                <label>中立</label>
+                <input type="number" id="faction-neutral" class="faction-num" min="0" value="2" />
+              </div>
+              <div class="faction-total">
+                合计：<span id="faction-total">13</span> / <span id="faction-max">13</span>
+                <span id="faction-error" class="error-msg hidden">⚠ 总和必须等于玩家人数</span>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-large" id="btn-start-game">开始游戏 →</button>
         </div>
 
-        <!-- 明牌角色 -->
-        <div class="config-block">
-          <label class="config-label">明牌角色（本局公开）</label>
+        <!-- 右栏：明牌角色 -->
+        <div class="init-right">
+          <h2 class="section-title">明牌角色（本局公开）</h2>
           <div id="open-roles-container" class="open-roles-container">
             <!-- 由 JS 渲染 -->
           </div>
         </div>
 
-        <button class="btn btn-primary btn-large" id="btn-start-game">开始游戏 →</button>
       </div>
     </section>
 
