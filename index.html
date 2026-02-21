@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>鹅鸭杀记牌助手</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- ===== 顶部导航栏 ===== -->
+  <header id="app-header">
+    <div class="header-left">
+      <span class="app-title">🪿 鹅鸭杀记牌助手</span>
+      <span id="round-badge" class="round-badge hidden">第 <span id="round-num">1</span> 轮</span>
+    </div>
+    <nav class="phase-nav" id="phase-nav">
+      <button class="nav-btn active" data-phase="init" id="nav-init">⚙️ 初始化</button>
+      <button class="nav-btn" data-phase="game" id="nav-game" disabled>🗺️ 游戏</button>
+      <button class="nav-btn" data-phase="meeting" id="nav-meeting" disabled>🗣️ 会议</button>
+    </nav>
+    <div class="header-right">
+      <button class="btn btn-secondary" id="btn-reset-round" title="重置当前轮次路径" style="display:none">↺ 重置本轮</button>
+      <button class="btn btn-danger" id="btn-end-game" title="结束本局并导出" style="display:none">⏹ 结束本局</button>
+    </div>
+  </header>
+
+  <!-- ===== 主内容区 ===== -->
+  <main id="app-main">
+
+    <!-- ── 阶段一：初始化 ── -->
+    <section id="phase-init" class="phase-section active">
+      <div class="init-container">
+        <h2 class="section-title">游戏配置</h2>
+
+        <!-- 玩家人数 -->
+        <div class="config-block">
+          <label class="config-label">玩家人数</label>
+          <div class="stepper">
+            <button class="stepper-btn" id="player-dec">−</button>
+            <span id="player-count-display" class="stepper-value">13</span>
+            <button class="stepper-btn" id="player-inc">+</button>
+          </div>
+        </div>
+
+        <!-- 地图选择 -->
+        <div class="config-block">
+          <label class="config-label">选择地图</label>
+          <div class="map-selector">
+            <button class="map-btn active" data-map="spaceship" id="map-spaceship">🚀 老妈鹅飞船</button>
+            <button class="map-btn" data-map="church" id="map-church">⛪ 鹅教堂</button>
+          </div>
+        </div>
+
+        <!-- 阵营配置 -->
+        <div class="config-block">
+          <label class="config-label">阵营人数配置</label>
+          <div class="faction-inputs">
+            <div class="faction-input-group">
+              <span class="faction-icon goose">🪿</span>
+              <label>鹅</label>
+              <input type="number" id="faction-goose" class="faction-num" min="0" value="8" />
+            </div>
+            <div class="faction-input-group">
+              <span class="faction-icon duck">🦆</span>
+              <label>鸭</label>
+              <input type="number" id="faction-duck" class="faction-num" min="0" value="3" />
+            </div>
+            <div class="faction-input-group">
+              <span class="faction-icon neutral">🕊️</span>
+              <label>中立</label>
+              <input type="number" id="faction-neutral" class="faction-num" min="0" value="2" />
+            </div>
+            <div class="faction-total">
+              合计：<span id="faction-total">13</span> / <span id="faction-max">13</span>
+              <span id="faction-error" class="error-msg hidden">⚠ 总和必须等于玩家人数</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 明牌角色 -->
+        <div class="config-block">
+          <label class="config-label">明牌角色（本局公开）</label>
+          <div id="open-roles-container" class="open-roles-container">
+            <!-- 由 JS 渲染 -->
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-large" id="btn-start-game">开始游戏 →</button>
+      </div>
+    </section>
+
+    <!-- ── 阶段二：游戏 ── -->
+    <section id="phase-game" class="phase-section">
+      <div class="game-layout">
+
+        <!-- 左侧：地图 -->
+        <div class="map-panel">
+          <div class="map-header">
+            <h3 id="map-title" class="map-title">老妈鹅飞船</h3>
+            <button class="btn btn-sm btn-secondary" id="btn-clear-path">清空路径</button>
+          </div>
+          <div class="map-wrapper">
+            <svg id="map-svg" class="map-svg"></svg>
+            <div id="map-nodes" class="map-nodes"></div>
+          </div>
+          <!-- 路径摘要 -->
+          <div class="path-summary-box">
+            <div class="path-summary-label">当前路径：</div>
+            <div id="path-summary" class="path-summary-text">（尚未选择房间）</div>
+          </div>
+        </div>
+
+        <!-- 右侧：操作面板 -->
+        <div class="game-side-panel">
+          <div class="side-block">
+            <h4>目击记录</h4>
+            <div id="sighting-list" class="sighting-list">
+              <p class="hint-text">点击地图节点后，可在此输入遇到的玩家编号</p>
+            </div>
+          </div>
+
+          <div class="side-block">
+            <h4>历史路径</h4>
+            <div id="history-list" class="history-list">
+              <p class="hint-text">暂无历史记录</p>
+            </div>
+          </div>
+
+          <div class="game-actions">
+            <button class="btn btn-primary" id="btn-enter-meeting">进入会议 →</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── 阶段三：会议 ── -->
+    <section id="phase-meeting" class="phase-section">
+      <div class="meeting-layout">
+
+        <!-- 左侧：玩家卡片网格 -->
+        <div class="players-panel">
+          <div class="players-header">
+            <h3>玩家信息</h3>
+            <div class="meeting-actions">
+              <button class="btn btn-sm btn-secondary" id="btn-next-round">下一轮 →</button>
+            </div>
+          </div>
+          <div id="player-cards-grid" class="player-cards-grid">
+            <!-- 由 JS 渲染 -->
+          </div>
+        </div>
+
+        <!-- 右侧：阵营统计面板 -->
+        <div class="stats-panel">
+          <h3>阵营统计</h3>
+          <div id="faction-stats" class="faction-stats">
+            <!-- 由 JS 渲染 -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== 弹窗：确认重置 ===== -->
+  <div id="modal-confirm" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3 id="modal-title">确认操作</h3>
+      <p id="modal-message">确定要执行此操作吗？</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="modal-cancel">取消</button>
+        <button class="btn btn-danger" id="modal-confirm-btn">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 弹窗：结束本局 ===== -->
+  <div id="modal-end-game" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3>结束本局</h3>
+      <p>本局数据已导出。是否清空数据开始新局？</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="end-keep-data">保留数据</button>
+        <button class="btn btn-danger" id="end-clear-data">清空并新局</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 节点目击输入浮层 ===== -->
+  <div id="sighting-popover" class="sighting-popover hidden">
+    <div class="popover-header">
+      <span id="popover-room-name"></span>
+      <button class="popover-close" id="popover-close">✕</button>
+    </div>
+    <label class="popover-label">遇到的玩家编号（逗号分隔）</label>
+    <input type="text" id="popover-input" class="popover-input" placeholder="如：3, 5, 7" />
+    <button class="btn btn-sm btn-primary" id="popover-save">保存</button>
+  </div>
+
+  <!-- ===== JS 模块 ===== -->
+  <script src="js/data.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/phase1.js"></script>
+  <script src="js/phase2.js"></script>
+  <script src="js/phase3.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
