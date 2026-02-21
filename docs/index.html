@@ -87,22 +87,25 @@
     .screenshots {
       padding: 48px 16px;
       text-align: center;
+      max-width: 1000px;
+      margin: 0 auto;
     }
-    .screenshots h2 { font-size: 1.3rem; color: var(--text-muted); margin-bottom: 24px; letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.85rem; }
+    .screenshots h2 { font-size: 1.4rem; font-weight: 700; color: var(--text); margin-bottom: 24px; }
 
     .screenshot-scroll {
       display: flex;
-      gap: 16px;
+      gap: 20px;
       overflow-x: auto;
-      padding: 8px 8px 16px;
+      padding: 8px 4px 16px;
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
+      justify-content: center;
     }
     .screenshot-scroll::-webkit-scrollbar { display: none; }
 
     .screenshot-card {
-      flex: 0 0 280px;
+      flex: 0 0 min(420px, 85vw);
       scroll-snap-align: center;
       background: var(--bg-card);
       border: 1px solid var(--border);
