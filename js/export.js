@@ -100,8 +100,6 @@ const Export = (() => {
   }
 
   function triggerEndGame() {
-    const text = buildText();
-    downloadTxt(text);
     // 显示结束弹窗
     document.getElementById('modal-end-game').classList.remove('hidden');
   }
@@ -110,6 +108,8 @@ const Export = (() => {
     document.getElementById('btn-end-game').addEventListener('click', triggerEndGame);
 
     document.getElementById('end-keep-data').addEventListener('click', () => {
+      const text = buildText();
+      downloadTxt(text);
       document.getElementById('modal-end-game').classList.add('hidden');
     });
 
