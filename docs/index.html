@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>鹅鸭杀记牌器</title>
+  <meta name="description" content="鹅鸭杀（Goose Duck）辅助记牌工具，支持地图追踪、阵营统计、会议记录，免费开源。" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --bg-card: #161b22;
+      --bg-elevated: #1c2128;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --goose: #4ae860;
+      --duck: #58a6ff;
+      --accent: #f0b429;
+      --red: #ff4444;
+      --radius: 12px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 64px 24px 48px;
+      background: radial-gradient(ellipse at 50% 0%, rgba(74,232,96,0.08) 0%, transparent 70%);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-emoji { font-size: 4rem; display: block; margin-bottom: 16px; }
+
+    .hero h1 {
+      font-size: clamp(1.8rem, 6vw, 2.8rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+
+    .hero h1 span.goose { color: var(--goose); }
+    .hero h1 span.duck  { color: var(--duck); }
+
+    .hero p {
+      font-size: clamp(0.95rem, 3vw, 1.1rem);
+      color: var(--text-muted);
+      max-width: 480px;
+      margin: 0 auto 32px;
+    }
+
+    .btn-group { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px; border-radius: 8px;
+      font-size: 1rem; font-weight: 700; text-decoration: none;
+      transition: opacity 0.15s, transform 0.15s;
+      border: none; cursor: pointer;
+    }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: var(--goose); color: #0d1117;
+    }
+    .btn-secondary {
+      background: transparent; color: var(--text);
+      border: 1.5px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--text-muted); }
+
+    /* ── 截图展示 ── */
+    .screenshots {
+      padding: 48px 16px;
+      text-align: center;
+    }
+    .screenshots h2 { font-size: 1.3rem; color: var(--text-muted); margin-bottom: 24px; letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.85rem; }
+
+    .screenshot-scroll {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding: 8px 8px 16px;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .screenshot-scroll::-webkit-scrollbar { display: none; }
+
+    .screenshot-card {
+      flex: 0 0 280px;
+      scroll-snap-align: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .screenshot-card .mock {
+      width: 100%;
+      aspect-ratio: 16/10;
+      background: var(--bg-elevated);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 2rem;
+    }
+    .screenshot-card .mock-label {
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+    .screenshot-card p {
+      padding: 12px 16px;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      text-align: left;
+    }
+
+    /* ── 功能特性 ── */
+    .features {
+      padding: 48px 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .features h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .feature-list { display: flex; flex-direction: column; gap: 16px; }
+    .feature-item {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .feature-icon { font-size: 1.6rem; flex-shrink: 0; line-height: 1; }
+    .feature-text h3 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+    .feature-text p  { font-size: 0.88rem; color: var(--text-muted); }
+
+    /* ── 使用步骤 ── */
+    .steps {
+      padding: 48px 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .steps h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .step-list { display: flex; flex-direction: column; gap: 0; }
+    .step-item {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      position: relative;
+      padding-bottom: 24px;
+    }
+    .step-item:last-child { padding-bottom: 0; }
+    .step-num {
+      flex-shrink: 0;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--bg-elevated);
+      border: 2px solid var(--goose);
+      color: var(--goose);
+      font-weight: 800;
+      font-size: 0.9rem;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; z-index: 1;
+    }
+    .step-item:not(:last-child) .step-num::after {
+      content: '';
+      position: absolute;
+      top: 100%; left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: calc(100% + 24px - 32px);
+      background: var(--border);
+      margin-top: 4px;
+    }
+    .step-body { padding-top: 4px; }
+    .step-body h3 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+    .step-body p  { font-size: 0.88rem; color: var(--text-muted); }
+    .step-body code {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 0.82rem;
+      color: var(--accent);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    /* ── 提示 ── */
+    .notice {
+      margin: 0 16px 48px;
+      max-width: 568px;
+      margin-left: auto;
+      margin-right: auto;
+      background: #1a1400;
+      border: 1px solid #5a4200;
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      font-size: 0.88rem;
+      color: var(--accent);
+    }
+    .notice strong { display: block; margin-bottom: 4px; }
+
+    /* ── CTA ── */
+    .cta {
+      text-align: center;
+      padding: 48px 16px 64px;
+      border-top: 1px solid var(--border);
+    }
+    .cta h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; }
+    .cta p { color: var(--text-muted); margin-bottom: 28px; font-size: 0.95rem; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 24px 16px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--text-muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+
+    /* ── 标签 ── */
+    .tag-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 28px; }
+    .tag {
+      font-size: 0.78rem; font-weight: 700;
+      padding: 4px 12px; border-radius: 20px;
+      border: 1px solid;
+    }
+    .tag.goose { color: var(--goose); border-color: var(--goose); background: rgba(74,232,96,0.08); }
+    .tag.duck  { color: var(--duck);  border-color: var(--duck);  background: rgba(88,166,255,0.08); }
+    .tag.gold  { color: var(--accent); border-color: var(--accent); background: rgba(240,180,41,0.08); }
+    .tag.muted { color: var(--text-muted); border-color: var(--border); background: transparent; }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <section class="hero">
+    <span class="hero-emoji">🪿🦆</span>
+    <h1><span class="goose">鹅鸭杀</span><span class="duck">记牌器</span></h1>
+    <div class="tag-row">
+      <span class="tag goose">免费开源</span>
+      <span class="tag duck">无需安装</span>
+      <span class="tag gold">离线可用</span>
+      <span class="tag muted">浏览器直接打开</span>
+    </div>
+    <p>专为《鹅鸭杀》桌游设计的辅助工具，帮你追踪玩家路径、记录会议信息、统计阵营数据。</p>
+    <div class="btn-group">
+      <a class="btn btn-primary" href="https://github.com/luvlua0808-png/goose-duck-tracker/archive/refs/heads/main.zip">
+        ⬇️ 下载 ZIP
+      </a>
+      <a class="btn btn-secondary" href="https://github.com/luvlua0808-png/goose-duck-tracker" target="_blank">
+        ⭐ GitHub 仓库
+      </a>
+    </div>
+  </section>
+
+  <!-- 功能特性 -->
+  <section class="features">
+    <h2>✨ 核心功能</h2>
+    <div class="feature-list">
+      <div class="feature-item">
+        <span class="feature-icon">🗺️</span>
+        <div class="feature-text">
+          <h3>地图路径追踪</h3>
+          <p>支持老妈鹅飞船、鹅教堂两张地图，可视化记录每轮玩家移动路径，快速定位可疑行为。</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon">📋</span>
+        <div class="feature-text">
+          <h3>会议信息记录</h3>
+          <p>为每位玩家标记阵营、角色、可信度，支持目击记录和备注，会议时一目了然。</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon">📊</span>
+        <div class="feature-text">
+          <h3>阵营统计面板</h3>
+          <p>实时统计鹅/鸭/中立阵营人数，明牌角色、跳出角色、未知槽位一栏显示，死亡角色自动标红。</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon">🔍</span>
+        <div class="feature-text">
+          <h3>角色快速搜索</h3>
+          <p>支持中文名称和拼音首字母搜索，快速找到目标角色，告别翻列表的烦恼。</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon">💾</span>
+        <div class="feature-text">
+          <h3>本局数据导出</h3>
+          <p>一键导出本局复盘 .txt 文件，包含玩家信息、路径记录、阵营统计，方便赛后回顾。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 使用步骤 -->
+  <section class="steps">
+    <h2>🚀 如何使用</h2>
+    <div class="step-list">
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>下载项目</h3>
+          <p>点击上方「下载 ZIP」按钮，或前往 GitHub 仓库下载最新版本。<br>（访问 GitHub 需要梯子，下载后完全离线可用）</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>解压文件</h3>
+          <p>将下载的 <code>.zip</code> 文件解压到任意文件夹。</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>打开工具</h3>
+          <p>双击文件夹内的 <code>index.html</code>，用浏览器打开即可使用，无需安装任何软件。</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>开始游戏</h3>
+          <p>配置人数、地图、阵营数量，选择明牌角色，点击「开始游戏」即可进入记录界面。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 提示 -->
+  <div class="notice">
+    <strong>⚠️ 关于访问 GitHub</strong>
+    国内访问 GitHub 可能需要梯子。如果无法下载，可以联系分享者直接获取文件包。工具本身完全离线运行，下载后无需联网。
+  </div>
+
+  <!-- CTA -->
+  <section class="cta">
+    <h2>免费、开源、无广告</h2>
+    <p>纯前端实现，数据存在本地，不收集任何信息。</p>
+    <div class="btn-group">
+      <a class="btn btn-primary" href="https://github.com/luvlua0808-png/goose-duck-tracker/archive/refs/heads/main.zip">
+        ⬇️ 立即下载
+      </a>
+      <a class="btn btn-secondary" href="https://github.com/luvlua0808-png/goose-duck-tracker" target="_blank">
+        查看源码
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>
+      <a href="https://github.com/luvlua0808-png/goose-duck-tracker" target="_blank">GitHub</a>
+      &nbsp;·&nbsp;
+      免费开源 · 非官方工具 · 与《鹅鸭杀》官方无关
+    </p>
+  </footer>
+
+</body>
+</html>
