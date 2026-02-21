@@ -453,6 +453,30 @@ body {
 /* 暂无玩家认领 → 暗色低对比 */
 .stat-tag.unclaimed { background: #1a1f27; color: #6e7681; border-color: #30363d; }
 .stat-empty { font-size: 0.78rem; color: var(--text-muted); font-style: italic; }
+/* 死亡角色 tag */
+.stat-tag.dead-role { background: #2a0a0a; color: #ff4444; border-color: #7a1a1a; text-decoration: line-through; opacity: 0.85; }
+.stat-tag.dead-role .dead-cross { margin-right: 4px; font-weight: 900; color: #ff2222; font-style: normal; }
+/* stat-tag-wrap 用于定位角标 */
+.stat-tag-wrap { position: relative; display: inline-flex; }
+/* 重复认领数字角标 */
+.stat-tag-badge {
+  position: absolute; top: -6px; right: -6px;
+  background: #e53e3e; color: #fff;
+  font-size: 0.65rem; font-weight: 900;
+  min-width: 16px; height: 16px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid #1a1f27; line-height: 1;
+}
+/* 玩家卡片重复角色发光轮廓 */
+.player-card.duplicate-role {
+  outline: 2px solid #e53e3e;
+  box-shadow: 0 0 10px 3px rgba(229, 62, 62, 0.55), 0 0 20px 6px rgba(229, 62, 62, 0.25);
+  animation: duplicate-glow 1.5s ease-in-out infinite alternate;
+}
+@keyframes duplicate-glow {
+  from { box-shadow: 0 0 8px 2px rgba(229,62,62,0.5), 0 0 16px 4px rgba(229,62,62,0.2); }
+  to   { box-shadow: 0 0 14px 5px rgba(229,62,62,0.8), 0 0 28px 10px rgba(229,62,62,0.35); }
+}
 
 /* ── 弹窗 ── */
 .modal-overlay {

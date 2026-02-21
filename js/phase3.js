@@ -40,10 +40,15 @@ const Phase3 = (() => {
   }
 
   function _buildCard(num, p, round) {
+    const { players } = State.get();
+    // 检测重复角色
+    const isDuplicate = p.role && Object.values(players).filter(pl => pl.role === p.role).length > 1;
+
     const card = document.createElement('div');
     card.className = 'player-card' +
       (p.alive ? ' alive' : ' dead') +
-      (p.faction ? ` faction-${p.faction}` : '');
+      (p.faction ? ` faction-${p.faction}` : '') +
+      (isDuplicate ? ' duplicate-role' : '');
     card.dataset.player = num;
 
     // ── 行1：编号 + 存活 + 可信度 ──
@@ -316,12 +321,32 @@ const Phase3 = (() => {
       tags.innerHTML = '<span class="stat-empty">暂无</span>';
     } else {
       roles.forEach(r => {
+        const wrap = document.createElement('span');
+        wrap.className = 'stat-tag-wrap';
+
         const tag = document.createElement('span');
-        // claimed=有玩家认领(亮色)，unclaimed=无人认领(暗色)
-        tag.className = `stat-tag ${tagClass} ${r.claimed ? 'claimed' : 'unclaimed'}`;
-        tag.textContent = r.name;
-        tag.title = r.claimed ? '已有玩家认领' : '暂无玩家认领';
-        tags.appendChild(tag);
+        let cls = `stat-tag ${tagClass} ${r.claimed ? 'claimed' : 'unclaimed'}`;
+        if (r.dead) cls += ' dead-role';
+        tag.className = cls;
+        tag.title = r.dead ? '认领该角色的玩家已全部死亡' : (r.claimed ? '已有玩家认领' : '暂无玩家认领');
+
+        if (r.dead) {
+          tag.innerHTML = `<span class="dead-cross">✕</span>${r.name}`;
+        } else {
+          tag.textContent = r.name;
+        }
+
+        wrap.appendChild(tag);
+
+        // 重复认领数字角标
+        if (r.claimCount > 1) {
+          const badge = document.createElement('span');
+          badge.className = 'stat-tag-badge';
+          badge.textContent = r.claimCount;
+          wrap.appendChild(badge);
+        }
+
+        tags.appendChild(wrap);
       });
     }
     row.appendChild(tags);

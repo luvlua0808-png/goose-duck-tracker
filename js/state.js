@@ -218,15 +218,27 @@ const State = {
     const { config, players } = gameState;
     const stats = {};
 
-    // 收集所有玩家已认领的角色
-    const claimedRoles = new Set(
-      Object.values(players).filter(p => p.role).map(p => p.role)
-    );
+    // 收集每个角色的认领玩家列表
+    const roleClaimMap = {}; // roleName -> [player]
+    Object.values(players).forEach(p => {
+      if (p.role) {
+        if (!roleClaimMap[p.role]) roleClaimMap[p.role] = [];
+        roleClaimMap[p.role].push(p);
+      }
+    });
+
+    function buildRoleInfo(roleName) {
+      const claimers = roleClaimMap[roleName] || [];
+      const claimed = claimers.length > 0;
+      const claimCount = claimers.length;
+      const dead = claimed && claimers.every(p => !p.alive);
+      return { name: roleName, claimed, claimCount, dead };
+    }
 
     ['goose', 'duck', 'neutral'].forEach(f => {
       const total = config.factions[f] || 0;
       const openNames = config.openRoles.filter(r => getRoleFaction(r) === f);
-      const open = openNames.map(r => ({ name: r, claimed: claimedRoles.has(r) }));
+      const open = openNames.map(buildRoleInfo);
 
       const jumpedNames = [];
       Object.values(players).forEach(p => {
@@ -234,7 +246,7 @@ const State = {
           if (!jumpedNames.includes(p.role)) jumpedNames.push(p.role);
         }
       });
-      const jumped = jumpedNames.map(r => ({ name: r, claimed: claimedRoles.has(r) }));
+      const jumped = jumpedNames.map(buildRoleInfo);
 
       const unknown = Math.max(0, total - open.length - jumped.length);
       stats[f] = { total, open, jumped, unknown };
