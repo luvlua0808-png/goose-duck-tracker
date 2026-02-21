@@ -253,6 +253,37 @@
     .cta h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; }
     .cta p { color: var(--text-muted); margin-bottom: 28px; font-size: 0.95rem; }
 
+    /* ── 联系方式 ── */
+    .contact {
+      text-align: center;
+      padding: 48px 16px;
+      border-top: 1px solid var(--border);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .contact h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; }
+    .contact p  { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; }
+    .wechat-card {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .wechat-qr {
+      width: 180px; height: 180px;
+      object-fit: cover;
+      border-radius: 8px;
+      display: block;
+    }
+    .wechat-tip {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
     /* ── Footer ── */
     footer {
       text-align: center;
@@ -419,6 +450,16 @@
       <a class="btn btn-secondary" href="https://github.com/luvlua0808-png/goose-duck-tracker" target="_blank">
         查看源码
       </a>
+    </div>
+  </section>
+
+  <!-- 联系方式 -->
+  <section class="contact">
+    <h2>💬 建议与反馈</h2>
+    <p>有任何建议或问题，欢迎微信联系我</p>
+    <div class="wechat-card">
+      <img src="wechat.jpg" alt="微信二维码" class="wechat-qr" />
+      <span class="wechat-tip">扫码添加微信</span>
     </div>
   </section>
 
