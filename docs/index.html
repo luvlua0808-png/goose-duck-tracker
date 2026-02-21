@@ -94,23 +94,34 @@
 
     .screenshot-scroll {
       display: flex;
-      gap: 20px;
-      overflow-x: auto;
+      gap: 16px;
       padding: 8px 4px 16px;
+      overflow-x: auto;
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
-      justify-content: center;
     }
     .screenshot-scroll::-webkit-scrollbar { display: none; }
 
     .screenshot-card {
-      flex: 0 0 min(420px, 85vw);
-      scroll-snap-align: center;
+      flex: 0 0 85vw;
+      scroll-snap-align: start;
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       overflow: hidden;
+    }
+
+    /* 桌面端：三列平铺 */
+    @media (min-width: 900px) {
+      .screenshot-scroll {
+        overflow-x: visible;
+        scroll-snap-type: none;
+      }
+      .screenshot-card {
+        flex: 1 1 0;
+        min-width: 0;
+      }
     }
     .screenshot-card .mock {
       width: 100%;
