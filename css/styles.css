@@ -522,3 +522,12 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── 署名水印 ── */
+#watermark {
+  position: fixed; bottom: 10px; right: 14px;
+  font-size: 0.72rem; color: rgba(139,148,158,0.45);
+  pointer-events: none; user-select: none;
+  letter-spacing: 0.04em; z-index: 9999;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
