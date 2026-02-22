@@ -456,6 +456,9 @@ body {
 /* 死亡角色 tag */
 .stat-tag.dead-role { background: #2a0a0a; color: #ff4444; border-color: #7a1a1a; text-decoration: line-through; opacity: 0.85; }
 .stat-tag.dead-role .dead-cross { margin-right: 4px; font-weight: 900; color: #ff2222; font-style: normal; }
+/* 明牌已满时超额跳出 tag */
+.stat-tag.overflowed-role { background: #2a1a00; color: #f0b429; border-color: #8a5a00; border-style: dashed; }
+.stat-tag.overflowed-role .overflow-warn { margin-right: 4px; font-weight: 900; font-style: normal; }
 /* stat-tag-wrap 用于定位角标 */
 .stat-tag-wrap { position: relative; display: inline-flex; }
 /* 重复认领数字角标 */

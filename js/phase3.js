@@ -327,11 +327,20 @@ const Phase3 = (() => {
         const tag = document.createElement('span');
         let cls = `stat-tag ${tagClass} ${r.claimed ? 'claimed' : 'unclaimed'}`;
         if (r.dead) cls += ' dead-role';
+        if (r.overflowed) cls += ' overflowed-role';
         tag.className = cls;
-        tag.title = r.dead ? '认领该角色的玩家已全部死亡' : (r.claimed ? '已有玩家认领' : '暂无玩家认领');
+
+        const titleParts = [];
+        if (r.dead) titleParts.push('认领该角色的玩家已全部死亡');
+        else if (r.claimed) titleParts.push('已有玩家认领');
+        else titleParts.push('暂无玩家认领');
+        if (r.overflowed) titleParts.push('⚠️ 明牌已满，该跳出存疑');
+        tag.title = titleParts.join(' · ');
 
         if (r.dead) {
           tag.innerHTML = `<span class="dead-cross">✕</span>${r.name}`;
+        } else if (r.overflowed) {
+          tag.innerHTML = `<span class="overflow-warn">⚠</span>${r.name}`;
         } else {
           tag.textContent = r.name;
         }
