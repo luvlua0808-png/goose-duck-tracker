@@ -44,8 +44,7 @@ const Phase3 = (() => {
     // 检测重复角色
     const isDuplicate = p.role && Object.values(players).filter(pl => pl.role === p.role).length > 1;
 
-    // 检测明牌已满时的跳出角色 & 阵营总数超限
-    let isOverflowed = false;
+    // 检测跳出角色是否超限：明牌数 + 跳出数 > 上限 → 所有跳出强红
     let isFactionExceeded = false;
     if (p.role) {
       const faction = p.faction || getRoleFaction(p.role);
@@ -53,16 +52,14 @@ const Phase3 = (() => {
         const total = config.factions[faction] || 0;
         const openNames = config.openRoles.filter(r => getRoleFaction(r) === faction);
         const isJumped = !openNames.includes(p.role);
-        const openFull = openNames.length >= total && total > 0;
-        isOverflowed = isJumped && openFull;
-
-        // 阵营总数超限：认领该阵营的玩家总数 > 上限
-        if (total > 0) {
-          const claimedCount = Object.values(players).filter(pl => {
-            const f = pl.faction || getRoleFaction(pl.role);
-            return f === faction && pl.role;
-          }).length;
-          isFactionExceeded = claimedCount > total && (isJumped || isDuplicate);
+        if (isJumped && total > 0) {
+          const jumpedNames = [];
+          Object.values(players).forEach(pl => {
+            if (pl.role && (pl.faction || getRoleFaction(pl.role)) === faction && !openNames.includes(pl.role)) {
+              if (!jumpedNames.includes(pl.role)) jumpedNames.push(pl.role);
+            }
+          });
+          isFactionExceeded = openNames.length + jumpedNames.length > total;
         }
       }
     }
@@ -72,7 +69,6 @@ const Phase3 = (() => {
       (p.alive ? ' alive' : ' dead') +
       (p.faction ? ` faction-${p.faction}` : '') +
       (isDuplicate ? ' duplicate-role' : '') +
-      (isOverflowed && !isFactionExceeded ? ' overflowed-card' : '') +
       (isFactionExceeded ? ' faction-exceeded-card' : '');
     card.dataset.player = num;
 

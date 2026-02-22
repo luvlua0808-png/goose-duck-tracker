@@ -246,11 +246,11 @@ const State = {
           if (!jumpedNames.includes(p.role)) jumpedNames.push(p.role);
         }
       });
-      const openFull = open.length >= total && total > 0;
-      const jumped = jumpedNames.map(r => ({ ...buildRoleInfo(r), overflowed: openFull }));
+      const exceeded = total > 0 && (openNames.length + jumpedNames.length) > total;
+      const jumped = jumpedNames.map(r => ({ ...buildRoleInfo(r), overflowed: exceeded }));
 
       const unknown = Math.max(0, total - open.length - jumped.length);
-      stats[f] = { total, open, jumped, unknown, openFull };
+      stats[f] = { total, open, jumped, unknown, exceeded };
     });
 
     return stats;
