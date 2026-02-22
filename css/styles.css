@@ -470,6 +470,16 @@ body {
   display: flex; align-items: center; justify-content: center;
   border: 1.5px solid #1a1f27; line-height: 1;
 }
+/* 玩家卡片阵营总数超限（最高警告）*/
+.player-card.faction-exceeded-card {
+  outline: 2px solid #ff2222;
+  box-shadow: 0 0 12px 4px rgba(255,34,34,0.7), 0 0 24px 8px rgba(255,34,34,0.35);
+  animation: exceeded-glow 1s ease-in-out infinite alternate;
+}
+@keyframes exceeded-glow {
+  from { box-shadow: 0 0 10px 3px rgba(255,34,34,0.6), 0 0 20px 6px rgba(255,34,34,0.25); }
+  to   { box-shadow: 0 0 18px 7px rgba(255,34,34,0.9), 0 0 36px 14px rgba(255,34,34,0.45); }
+}
 /* 玩家卡片明牌已满跳出角色警告轮廓 */
 .player-card.overflowed-card {
   outline: 2px solid #f0b429;
