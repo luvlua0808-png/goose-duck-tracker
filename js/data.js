@@ -5,7 +5,7 @@
 const ROLES = [
   // 🪿 鹅阵营 (15)
   { name: '警长',     faction: 'goose',   initials: 'jz'   },
-  { name: '正义使者', faction: 'goose',   initials: 'zysz' },
+  { name: '正义使者', faction: 'goose',   initials: 'zysz', aliases: ['正义'] },
   { name: '工程师',   faction: 'goose',   initials: 'gcs'  },
   { name: '通灵者',   faction: 'goose',   initials: 'tlz',  aliases: ['通灵'] },
   { name: '侦探',     faction: 'goose',   initials: 'zt'   },
@@ -17,28 +17,28 @@ const ROLES = [
   { name: '模仿者',   faction: 'goose',   initials: 'mfz'  },
   { name: '复仇者',   faction: 'goose',   initials: 'fcz'  },
   { name: '士兵',     faction: 'goose',   initials: 'sb'   },
-  { name: '法医',     faction: 'goose',   initials: 'fy'   },
+  { name: '法医',     faction: 'goose',   initials: 'fy',   aliases: ['法'] },
   { name: '探测员',   faction: 'goose',   initials: 'tcy',  aliases: ['探测'] },
   { name: '大白鹅',   faction: 'goose',   initials: 'dbe'  },
 
   // 🦆 鸭阵营 (10)
   { name: '专业杀手', faction: 'duck',    initials: 'zyss' },
-  { name: '隐形鸭',   faction: 'duck',    initials: 'yxy',  aliases: ['隐形呀', '银行鸭', '隐行鸭', '隐形压', '隐形ya', '隐形牙'] },
-  { name: '变形者',   faction: 'duck',    initials: 'bxz'  },
-  { name: '爆炸王',   faction: 'duck',    initials: 'bzw'  },
+  { name: '隐形鸭',   faction: 'duck',    initials: 'yxy',  aliases: ['隐形呀', '银行鸭', '隐行鸭', '隐形压', '隐形ya', '隐形牙', '隐形'] },
+  { name: '变形者',   faction: 'duck',    initials: 'bxz',  aliases: ['变形'] },
+  { name: '爆炸王',   faction: 'duck',    initials: 'bzw',  aliases: ['爆炸'] },
   { name: '刺客',     faction: 'duck',    initials: 'ck'   },
-  { name: '食鸟鸭',   faction: 'duck',    initials: 'sny'  },
+  { name: '食鸟鸭',   faction: 'duck',    initials: 'sny',  aliases: ['食鸟'] },
   { name: '间谍',     faction: 'duck',    initials: 'jd'   },
   { name: '巫医',     faction: 'duck',    initials: 'wy',   aliases: ['无医', '吴医', '巫一', '乌伊', '乌医', '巫伊', '乌衣'] },
   { name: '掠夺者',   faction: 'duck',    initials: 'ldz'  },
-  { name: '狙击手',   faction: 'duck',    initials: 'jjs'  },
+  { name: '狙击手',   faction: 'duck',    initials: 'jjs',  aliases: ['狙击'] },
 
   // 🕊️ 中立阵营 (7)
   { name: '呆呆鸟',   faction: 'neutral', initials: 'ddn'  },
   { name: '秃鹫',     faction: 'neutral', initials: 'tj',   aliases: ['秃就', '图就', '秃旧', '图鹫', '秃', '突就', '突鹫', '脱'] },
   { name: '鸽子',     faction: 'neutral', initials: 'gz'   },
   { name: '鹈鹕',     faction: 'neutral', initials: 'th',   aliases: ['提壶', '提鹄', '提湖', '啼壶', '鹈壶', '题壶', '体壶', '提葫', '特壶', '梯壶', '啼胡', '提胡', '踢壶', '替壶'] },
-  { name: '猎鹰',     faction: 'neutral', initials: 'ly'   },
+  { name: '猎鹰',     faction: 'neutral', initials: 'ly',   aliases: ['猎'] },
   { name: '布谷鸟',   faction: 'neutral', initials: 'bgn'  },
   { name: '锦鸡',     faction: 'neutral', initials: 'jj',   aliases: ['近鸡', '金鸡', '紧鸡', '劲鸡', '锦基', '近基', '金基', '紧急', '紧', '锦'] },
 ];
