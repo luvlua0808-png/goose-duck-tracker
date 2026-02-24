@@ -29,13 +29,13 @@ const ROLES = [
   { name: '刺客',     faction: 'duck',    initials: 'ck'   },
   { name: '食鸟鸭',   faction: 'duck',    initials: 'sny'  },
   { name: '间谍',     faction: 'duck',    initials: 'jd'   },
-  { name: '巫医',     faction: 'duck',    initials: 'wy',   aliases: ['无医', '吴医', '巫一', '乌伊', '乌医', '巫伊'] },
+  { name: '巫医',     faction: 'duck',    initials: 'wy',   aliases: ['无医', '吴医', '巫一', '乌伊', '乌医', '巫伊', '乌衣'] },
   { name: '掠夺者',   faction: 'duck',    initials: 'ldz'  },
   { name: '狙击手',   faction: 'duck',    initials: 'jjs'  },
 
   // 🕊️ 中立阵营 (7)
   { name: '呆呆鸟',   faction: 'neutral', initials: 'ddn'  },
-  { name: '秃鹫',     faction: 'neutral', initials: 'tj',   aliases: ['秃就', '图就', '秃旧', '图鹫', '秃'] },
+  { name: '秃鹫',     faction: 'neutral', initials: 'tj',   aliases: ['秃就', '图就', '秃旧', '图鹫', '秃', '突就', '突鹫'] },
   { name: '鸽子',     faction: 'neutral', initials: 'gz'   },
   { name: '鹈鹕',     faction: 'neutral', initials: 'th',   aliases: ['提壶', '提鹄', '提湖', '啼壶', '鹈壶', '题壶', '体壶', '提葫', '特壶', '梯壶', '啼胡', '提胡', '踢壶', '替壶'] },
   { name: '猎鹰',     faction: 'neutral', initials: 'ly'   },
