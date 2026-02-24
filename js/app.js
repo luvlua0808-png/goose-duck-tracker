@@ -115,6 +115,7 @@ const App = (() => {
     Phase2.init();
     Phase3.init();
     Export.init();
+    AI.init();
 
     // 绑定全局控件
     _bindNavBtns();

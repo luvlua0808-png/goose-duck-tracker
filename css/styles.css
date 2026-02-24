@@ -574,3 +574,124 @@ body {
   letter-spacing: 0.04em; z-index: 9999;
   font-family: 'SF Mono', 'Fira Code', monospace;
 }
+
+/* ── AI 设置按钮 ── */
+#btn-ai-settings {
+  font-size: 0.78rem; padding: 4px 10px;
+}
+
+/* ── 会议页 AI 分析按钮 ── */
+.btn-ai {
+  background: linear-gradient(135deg, #4a1fa8 0%, #7c3aed 100%);
+  color: #fff; border: 1px solid #6d28d9;
+  font-weight: 600; letter-spacing: 0.02em;
+  transition: opacity var(--transition), box-shadow var(--transition);
+}
+.btn-ai:hover { opacity: 0.88; box-shadow: 0 0 12px rgba(124,58,237,0.5); }
+.btn-ai:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── AI 设置模态框内容 ── */
+.ai-settings-desc {
+  font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6;
+}
+.ai-settings-desc strong { color: var(--accent-blue); }
+.ai-settings-field {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+}
+.ai-settings-field label {
+  font-size: 0.82rem; color: var(--text-secondary); white-space: nowrap; min-width: 54px;
+}
+.ai-settings-field input[type="password"],
+.ai-settings-field input[type="text"] {
+  flex: 1; background: var(--bg-base); border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm); color: var(--text-primary);
+  font-size: 0.85rem; padding: 6px 10px; font-family: inherit;
+}
+.ai-settings-field input:focus { outline: none; border-color: #7c3aed; }
+.ai-model-display {
+  font-size: 0.85rem; color: var(--text-primary); background: var(--bg-base);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 6px 10px; flex: 1;
+}
+.ai-model-note { color: var(--text-muted); font-size: 0.78rem; }
+
+/* ── AI 结果面板（右侧栏内） ── */
+.ai-result-panel {
+  margin-top: 18px;
+  background: linear-gradient(160deg, #1a1030 0%, #12101e 100%);
+  border: 1px solid #4a2a7a;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(124,58,237,0.15);
+}
+.ai-result-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(124,58,237,0.18);
+  border-bottom: 1px solid #4a2a7a;
+}
+.ai-result-title {
+  font-weight: 700; font-size: 0.88rem;
+  color: #c4b5fd; letter-spacing: 0.03em;
+}
+.ai-result-close {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); font-size: 0.85rem; padding: 2px 6px;
+  border-radius: var(--radius-sm); transition: color var(--transition);
+  font-family: inherit;
+}
+.ai-result-close:hover { color: var(--text-primary); }
+.ai-result-body {
+  padding: 14px 14px 10px;
+  max-height: 380px; overflow-y: auto;
+  font-size: 0.83rem; line-height: 1.75; color: var(--text-primary);
+}
+.ai-result-footer {
+  padding: 8px 14px;
+  font-size: 0.72rem; color: var(--text-muted);
+  border-top: 1px solid rgba(74,42,122,0.4);
+  text-align: center; letter-spacing: 0.02em;
+}
+
+/* ── AI 加载状态 ── */
+.ai-loading {
+  display: flex; align-items: center; gap: 10px;
+  color: #c4b5fd; font-size: 0.85rem; padding: 8px 0;
+}
+.ai-spinner {
+  display: inline-block; width: 16px; height: 16px;
+  border: 2px solid rgba(196,181,253,0.25);
+  border-top-color: #c4b5fd;
+  border-radius: 50%;
+  animation: ai-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes ai-spin { to { transform: rotate(360deg); } }
+
+/* ── AI 流式文本 & 光标 ── */
+.ai-stream-text { white-space: pre-wrap; word-break: break-word; }
+.ai-cursor {
+  display: inline-block;
+  color: #c4b5fd;
+  animation: ai-blink 0.8s step-end infinite;
+  margin-left: 1px;
+}
+@keyframes ai-blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* ── AI section 颜色标签 ── */
+.ai-section-tag {
+  font-weight: 700; font-size: 0.83rem;
+  border-radius: 3px; padding: 0 2px;
+}
+.ai-section-contradiction { color: #f87171; }
+.ai-section-suspect       { color: #fbbf24; }
+.ai-section-trust         { color: #34d399; }
+.ai-section-faction       { color: #60a5fa; }
+.ai-section-suggest       { color: #c4b5fd; }
+.ai-section-default       { color: var(--text-secondary); }
+
+/* ── AI 错误信息 ── */
+.ai-error-msg {
+  color: var(--text-secondary); font-size: 0.83rem; line-height: 1.7;
+  padding: 4px 0;
+}

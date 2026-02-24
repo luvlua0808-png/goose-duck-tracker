@@ -22,6 +22,7 @@
     <div class="header-right">
       <button class="btn btn-secondary" id="btn-reset-round" title="重置当前轮次路径" style="display:none">↺ 重置本轮</button>
       <button class="btn btn-danger" id="btn-end-game" title="结束本局并导出" style="display:none">⏹ 结束本局</button>
+      <button class="btn btn-secondary" id="btn-ai-settings" title="AI 设置">⚙️ AI设置</button>
     </div>
   </header>
 
@@ -152,6 +153,7 @@
           <div class="players-header">
             <h3>玩家信息</h3>
             <div class="meeting-actions">
+              <button class="btn btn-sm btn-ai" id="btn-ai-analyze" type="button">🧠 AI帮我捋一下</button>
               <button class="btn btn-sm btn-secondary" id="btn-next-round">下一轮 →</button>
             </div>
           </div>
@@ -160,11 +162,23 @@
           </div>
         </div>
 
-        <!-- 右侧：阵营统计面板 -->
+        <!-- 右侧：阵营统计 + AI结果面板 -->
         <div class="stats-panel">
           <h3>阵营统计</h3>
           <div id="faction-stats" class="faction-stats">
             <!-- 由 JS 渲染 -->
+          </div>
+
+          <!-- AI 推理结果区域 -->
+          <div id="ai-result-panel" class="ai-result-panel hidden">
+            <div class="ai-result-header">
+              <span class="ai-result-title">🧠 AI 分析</span>
+              <button class="ai-result-close" id="btn-ai-close" type="button">✕</button>
+            </div>
+            <div id="ai-result-body" class="ai-result-body">
+              <!-- 内容由 JS 渲染 -->
+            </div>
+            <div class="ai-result-footer">基于当前记录生成，仅供参考</div>
           </div>
         </div>
 
@@ -172,6 +186,27 @@
     </section>
 
   </main>
+
+  <!-- ===== AI 设置模态框 ===== -->
+  <div id="modal-ai-settings" class="modal-overlay hidden">
+    <div class="modal-box">
+      <h3>AI 设置</h3>
+      <p class="ai-settings-desc">使用<strong>硅基流动</strong>接入 DeepSeek-V3，API Key 仅存储在本地浏览器，不会上传。</p>
+      <div class="ai-settings-field">
+        <label for="ai-api-key-input">API Key</label>
+        <input type="password" id="ai-api-key-input" placeholder="sk-..." autocomplete="off" />
+        <button class="btn btn-sm btn-secondary" id="btn-ai-key-toggle" type="button">显示</button>
+      </div>
+      <div class="ai-settings-field">
+        <label>模型</label>
+        <div class="ai-model-display">deepseek-ai/DeepSeek-V3 <span class="ai-model-note">（via 硅基流动）</span></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="ai-settings-cancel">取消</button>
+        <button class="btn btn-primary" id="ai-settings-save">保存</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ===== 弹窗：确认重置 ===== -->
   <div id="modal-confirm" class="modal-overlay hidden">
@@ -215,6 +250,7 @@
   <script src="js/phase2.js"></script>
   <script src="js/phase3.js"></script>
   <script src="js/export.js"></script>
+  <script src="js/ai.js"></script>
   <script src="js/app.js"></script>
 
   <!-- 署名水印 -->
