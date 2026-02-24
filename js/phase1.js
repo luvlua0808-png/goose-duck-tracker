@@ -244,6 +244,9 @@ const Phase1 = (() => {
         } else if (_bufferText) {
           console.warn('[voice] 未匹配到角色，原始识别文字：', _bufferText);
           alert('未识别到角色名\n原始识别：「' + _bufferText + '」\n请截图反馈以便补充别名');
+        } else {
+          console.warn('[voice] ASR 无任何输出，麦克风可能没有收到声音');
+          alert('语音未识别到任何内容\n对于生僻字角色（如鹈鹕），建议直接用搜索框输入拼音首字母「th」');
         }
         _bufferText = '';
       };
