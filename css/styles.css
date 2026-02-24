@@ -188,6 +188,23 @@ body {
   transition: all var(--transition);
 }
 .open-roles-search-clear:hover { background: var(--bg-hover); color: var(--text-primary); }
+.open-roles-voice-btn {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition);
+}
+.open-roles-voice-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.open-roles-voice-btn.listening {
+  border-color: #ff2222;
+  color: #ffaaaa;
+  box-shadow: 0 0 12px rgba(255, 34, 34, 0.25);
+}
 .role-faction-group { display: flex; flex-direction: column; gap: 8px; }
 .role-faction-label {
   font-size: 1rem; font-weight: 700; color: var(--text-secondary);
@@ -217,6 +234,18 @@ body {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 20px; border-bottom: 1px solid var(--border);
   background: var(--bg-surface); flex-shrink: 0;
+}
+.map-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+#btn-voice-sighting.listening {
+  border-color: #ff2222;
+  color: #ffaaaa;
+  box-shadow: 0 0 14px rgba(255, 34, 34, 0.28);
 }
 .map-title { font-size: 1rem; font-weight: 600; }
 .map-wrapper {

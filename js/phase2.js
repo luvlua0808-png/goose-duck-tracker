@@ -5,12 +5,18 @@
 const Phase2 = (() => {
 
   let _popoverTargetRoom = null;
+  let _voiceRecognition = null;
+  let _voiceListening = false;
+  let _voiceSilenceTimer = null;
+  let _voiceBufferText = '';
 
   function init() {
     document.getElementById('btn-clear-path').addEventListener('click', () => {
       State.clearPath();
       render();
     });
+
+    _bindVoiceSighting();
 
     document.getElementById('btn-enter-meeting').addEventListener('click', () => {
       State.commitRound();
@@ -32,6 +38,155 @@ const Phase2 = (() => {
           !popover.contains(e.target) &&
           !e.target.classList.contains('map-node')) {
         _closePopover();
+      }
+    });
+  }
+
+  function _bindVoiceSighting() {
+    const btn = document.getElementById('btn-voice-sighting');
+    if (!btn) return;
+
+    function getSR() {
+      return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+    }
+
+    function parseNums(text) {
+      const nums = [];
+      const t = (text || '').replace(/\s+/g, '');
+
+      // 阿拉伯数字
+      (t.match(/\d+/g) || []).forEach(s => {
+        const n = parseInt(s, 10);
+        if (!isNaN(n)) nums.push(n);
+      });
+
+      // 常见中文数字（1-16）
+      const cnMap = {
+        '一': 1, '二': 2, '两': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
+        '十': 10, '十一': 11, '十二': 12, '十三': 13, '十四': 14, '十五': 15, '十六': 16,
+      };
+      Object.entries(cnMap).forEach(([k, v]) => {
+        const re = new RegExp(k + '号?', 'g');
+        if (re.test(t)) nums.push(v);
+      });
+
+      return [...new Set(nums)].filter(n => n > 0);
+    }
+
+    function pickRoomId(text, mapDef) {
+      const t = (text || '').replace(/\s+/g, '');
+      let best = null;
+      let bestLen = 0;
+      mapDef.nodes.forEach(node => {
+        if (!node || !node.label) return;
+        if (t.includes(node.label) && node.label.length > bestLen) {
+          best = node;
+          bestLen = node.label.length;
+        }
+      });
+      return best ? best.id : null;
+    }
+
+    function applySighting(roomId, nums) {
+      if (!roomId) {
+        alert('未识别到地点，请按“号码 + 地点”说法，例如：3号 食堂');
+        return;
+      }
+      if (!nums || nums.length === 0) {
+        alert('未识别到玩家编号，请按“号码 + 地点”说法，例如：3号 食堂');
+        return;
+      }
+
+      // 加入路径
+      State.addToPath(roomId);
+
+      // 合并目击
+      const existing = State.get().currentSightings[roomId] || [];
+      const merged = [...new Set([...(existing || []), ...nums])].sort((a, b) => a - b);
+      State.setSighting(roomId, merged);
+      render();
+    }
+
+    // 防止按钮获取焦点导致触发系统级听写
+    btn.addEventListener('mousedown', e => e.preventDefault());
+
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const SR = getSR();
+      if (!SR) {
+        alert('当前浏览器不支持语音识别（建议使用 Chrome/Edge，并用 http://localhost 打开本地页面）');
+        return;
+      }
+
+      // 正在监听：再次点击停止
+      if (_voiceListening && _voiceRecognition) {
+        _voiceRecognition.stop();
+        return;
+      }
+
+      const { config } = State.get();
+      const mapDef = MAPS[config.map];
+
+      _voiceRecognition = new SR();
+      _voiceRecognition.lang = 'zh-CN';
+      _voiceRecognition.continuous = true;
+      _voiceRecognition.interimResults = false;
+
+      _voiceBufferText = '';
+      if (_voiceSilenceTimer) {
+        clearTimeout(_voiceSilenceTimer);
+        _voiceSilenceTimer = null;
+      }
+
+      _voiceListening = true;
+      btn.classList.add('listening');
+      btn.textContent = '🛑 正在听…';
+
+      _voiceRecognition.onresult = ev => {
+        let chunk = '';
+        try {
+          for (let i = ev.resultIndex; i < ev.results.length; i++) {
+            const t = ev.results[i] && ev.results[i][0] ? ev.results[i][0].transcript : '';
+            if (t) chunk += t;
+          }
+        } catch (_) {
+          // ignore
+        }
+        if (chunk) _voiceBufferText += chunk;
+
+        const nums = parseNums(_voiceBufferText);
+        const roomId = pickRoomId(_voiceBufferText, mapDef);
+        applySighting(roomId, nums);
+
+        if (_voiceSilenceTimer) clearTimeout(_voiceSilenceTimer);
+        _voiceSilenceTimer = setTimeout(() => {
+          if (_voiceRecognition) _voiceRecognition.stop();
+        }, 5000);
+      };
+
+      _voiceRecognition.onerror = err => {
+        const msg = err && err.error ? err.error : 'unknown';
+        alert('语音识别失败：' + msg + '（请确认已允许麦克风权限，并使用 http://localhost 打开）');
+      };
+
+      _voiceRecognition.onend = () => {
+        if (_voiceSilenceTimer) {
+          clearTimeout(_voiceSilenceTimer);
+          _voiceSilenceTimer = null;
+        }
+        _voiceListening = false;
+        btn.classList.remove('listening');
+        btn.textContent = '🎙 语音记录';
+      };
+
+      try {
+        _voiceRecognition.start();
+      } catch (_) {
+        _voiceListening = false;
+        btn.classList.remove('listening');
+        btn.textContent = '🎙 语音记录';
       }
     });
   }

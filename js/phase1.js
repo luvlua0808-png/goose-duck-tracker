@@ -130,6 +130,129 @@ const Phase1 = (() => {
       searchInput.focus();
     });
 
+    const voiceBtn = document.createElement('button');
+    voiceBtn.className = 'open-roles-voice-btn';
+    voiceBtn.type = 'button';
+    voiceBtn.textContent = '🎙';
+    voiceBtn.title = '语音勾选明牌角色（只添加）';
+
+    let recognition = null;
+    let listening = false;
+    let _silenceTimer = null;
+    let _bufferText = '';
+
+    function _getSpeechRecognition() {
+      return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+    }
+
+    function _pickRolesFromText(text) {
+      const t = (text || '').replace(/\s+/g, '');
+      const hits = [];
+      ROLES.forEach(r => {
+        if (r && r.name && t.includes(r.name)) hits.push(r.name);
+      });
+      return [...new Set(hits)];
+    }
+
+    function _applyOpenRoles(roleNames) {
+      if (!roleNames || roleNames.length === 0) return;
+      const openRoles = [...State.get().config.openRoles];
+      roleNames.forEach(name => {
+        if (!openRoles.includes(name)) openRoles.push(name);
+      });
+      State.updateConfig('openRoles', openRoles);
+      _updateOpenRoleChips();
+    }
+
+    // 防止按钮抢走输入焦点导致触发系统级听写
+    voiceBtn.addEventListener('mousedown', e => e.preventDefault());
+
+    voiceBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const SR = _getSpeechRecognition();
+      if (!SR) {
+        alert('当前浏览器不支持语音识别（建议使用 Chrome/Edge，并用 http://localhost 打开本地页面）');
+        return;
+      }
+
+      // 正在监听：再次点击停止
+      if (listening && recognition) {
+        recognition.stop();
+        return;
+      }
+
+      recognition = new SR();
+      recognition.lang = 'zh-CN';
+      // continuous 可以让一次录入包含更多片段；用静默计时自动结束
+      recognition.continuous = true;
+      recognition.interimResults = false;
+
+      _bufferText = '';
+      if (_silenceTimer) {
+        clearTimeout(_silenceTimer);
+        _silenceTimer = null;
+      }
+
+      listening = true;
+      voiceBtn.textContent = '🛑';
+      voiceBtn.classList.add('listening');
+      console.log('[voice] start');
+
+      recognition.onresult = e => {
+        // 累计本次识别到的所有片段
+        let chunk = '';
+        try {
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            const t = e.results[i] && e.results[i][0] ? e.results[i][0].transcript : '';
+            if (t) chunk += t;
+          }
+        } catch (_) {
+          // ignore
+        }
+        if (chunk) _bufferText += chunk;
+
+        console.log('[voice] result:', _bufferText);
+        const roles = _pickRolesFromText(_bufferText);
+        if (!roles || roles.length === 0) {
+          alert('未识别到角色名，请重试（建议说清晰的中文角色全名）');
+          return;
+        }
+        _applyOpenRoles(roles);
+
+        // 如果持续有结果，延后结束；一段时间无新结果自动 stop
+        if (_silenceTimer) clearTimeout(_silenceTimer);
+        _silenceTimer = setTimeout(() => {
+          if (recognition) recognition.stop();
+        }, 5000);
+      };
+      recognition.onerror = (err) => {
+        const msg = err && err.error ? err.error : 'unknown';
+        console.warn('[voice] error:', err);
+        alert('语音识别失败：' + msg + '（请确认已允许麦克风权限，并使用 http://localhost 打开）');
+      };
+      recognition.onend = () => {
+        if (_silenceTimer) {
+          clearTimeout(_silenceTimer);
+          _silenceTimer = null;
+        }
+        listening = false;
+        voiceBtn.textContent = '🎙';
+        voiceBtn.classList.remove('listening');
+        console.log('[voice] end');
+      };
+
+      try {
+        recognition.start();
+      } catch (e) {
+        // 避免重复 start 抛错导致按钮卡住
+        listening = false;
+        voiceBtn.textContent = '🎙';
+        voiceBtn.classList.remove('listening');
+      }
+    });
+
     function _filterChips(q) {
       document.querySelectorAll('#open-roles-container .role-chip').forEach(chip => {
         const nameMatch = chip.dataset.role.toLowerCase().includes(q);
@@ -150,6 +273,7 @@ const Phase1 = (() => {
 
     searchWrap.appendChild(searchInput);
     searchWrap.appendChild(clearBtn);
+    searchWrap.appendChild(voiceBtn);
     container.appendChild(searchWrap);
 
     const groupsWrap = document.createElement('div');
