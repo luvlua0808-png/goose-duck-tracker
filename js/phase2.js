@@ -79,9 +79,19 @@ const Phase2 = (() => {
       let bestLen = 0;
       mapDef.nodes.forEach(node => {
         if (!node || !node.label) return;
+        // 先匹配 label
         if (t.includes(node.label) && node.label.length > bestLen) {
           best = node;
           bestLen = node.label.length;
+        }
+        // 再匹配 aliases
+        if (node.aliases) {
+          node.aliases.forEach(alias => {
+            if (t.includes(alias) && alias.length > bestLen) {
+              best = node;
+              bestLen = alias.length;
+            }
+          });
         }
       });
       return best ? best.id : null;
@@ -107,24 +117,15 @@ const Phase2 = (() => {
       render();
     }
 
-    // 防止按钮获取焦点导致触发系统级听写
-    btn.addEventListener('mousedown', e => e.preventDefault());
+    // ── 核心：启动/停止识别 ───────────────────────────────────
 
-    btn.addEventListener('click', e => {
-      e.preventDefault();
-      e.stopPropagation();
-
+    function startListening() {
       const SR = getSR();
       if (!SR) {
         alert('当前浏览器不支持语音识别（建议使用 Chrome/Edge，并用 http://localhost 打开本地页面）');
         return;
       }
-
-      // 正在监听：再次点击停止
-      if (_voiceListening && _voiceRecognition) {
-        _voiceRecognition.stop();
-        return;
-      }
+      if (_voiceListening) return;
 
       const { config } = State.get();
       const mapDef = MAPS[config.map];
@@ -135,10 +136,7 @@ const Phase2 = (() => {
       _voiceRecognition.interimResults = false;
 
       _voiceBufferText = '';
-      if (_voiceSilenceTimer) {
-        clearTimeout(_voiceSilenceTimer);
-        _voiceSilenceTimer = null;
-      }
+      if (_voiceSilenceTimer) { clearTimeout(_voiceSilenceTimer); _voiceSilenceTimer = null; }
 
       _voiceListening = true;
       btn.classList.add('listening');
@@ -151,34 +149,46 @@ const Phase2 = (() => {
             const t = ev.results[i] && ev.results[i][0] ? ev.results[i][0].transcript : '';
             if (t) chunk += t;
           }
-        } catch (_) {
-          // ignore
-        }
+        } catch (_) {}
         if (chunk) _voiceBufferText += chunk;
-
-        const nums = parseNums(_voiceBufferText);
-        const roomId = pickRoomId(_voiceBufferText, mapDef);
-        applySighting(roomId, nums);
-
-        if (_voiceSilenceTimer) clearTimeout(_voiceSilenceTimer);
-        _voiceSilenceTimer = setTimeout(() => {
-          if (_voiceRecognition) _voiceRecognition.stop();
-        }, 5000);
+        console.log('[voice-map] result raw:', _voiceBufferText);
       };
 
       _voiceRecognition.onerror = err => {
         const msg = err && err.error ? err.error : 'unknown';
-        alert('语音识别失败：' + msg + '（请确认已允许麦克风权限，并使用 http://localhost 打开）');
+        if (msg !== 'aborted') {
+          alert('语音识别失败：' + msg + '（请确认已允许麦克风权限，并使用 http://localhost 打开）');
+        }
       };
 
       _voiceRecognition.onend = () => {
-        if (_voiceSilenceTimer) {
-          clearTimeout(_voiceSilenceTimer);
-          _voiceSilenceTimer = null;
-        }
+        if (_voiceSilenceTimer) { clearTimeout(_voiceSilenceTimer); _voiceSilenceTimer = null; }
         _voiceListening = false;
         btn.classList.remove('listening');
-        btn.textContent = '🎙 语音记录';
+        btn.textContent = '🎙 语音(空格)';
+
+        console.log('[voice-map] end, buffer:', _voiceBufferText);
+        if (!_voiceBufferText) {
+          alert('语音未识别到任何内容，请重试');
+          return;
+        }
+
+        const nums   = parseNums(_voiceBufferText);
+        const roomId = pickRoomId(_voiceBufferText, mapDef);
+
+        if (!roomId) {
+          alert('未识别到地点\n原始识别：「' + _voiceBufferText + '」\n请截图反馈以便补充别名');
+          _voiceBufferText = '';
+          return;
+        }
+        if (!nums || nums.length === 0) {
+          alert('未识别到玩家编号\n原始识别：「' + _voiceBufferText + '」\n请按"号码 + 地点"说，例如：3号 食堂');
+          _voiceBufferText = '';
+          return;
+        }
+
+        applySighting(roomId, nums);
+        _voiceBufferText = '';
       };
 
       try {
@@ -186,8 +196,43 @@ const Phase2 = (() => {
       } catch (_) {
         _voiceListening = false;
         btn.classList.remove('listening');
-        btn.textContent = '🎙 语音记录';
+        btn.textContent = '🎙 语音(空格)';
       }
+    }
+
+    function stopListening() {
+      if (_voiceListening && _voiceRecognition) {
+        _voiceRecognition.stop();
+      }
+    }
+
+    // ── 按钮点击：切换开始/停止 ──────────────────────────────
+
+    btn.textContent = '🎙 语音(空格)';
+    btn.addEventListener('mousedown', e => e.preventDefault());
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (_voiceListening) { stopListening(); } else { startListening(); }
+    });
+
+    // ── 空格键：按住开始，松开停止 ───────────────────────────
+    // 只在游戏阶段（phase-game 可见）且焦点不在输入框时响应
+
+    document.addEventListener('keydown', e => {
+      if (e.code !== 'Space') return;
+      const gameSection = document.getElementById('phase-game');
+      if (!gameSection || !gameSection.classList.contains('active')) return;
+      const tag = document.activeElement && document.activeElement.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.repeat) return;
+      e.preventDefault();
+      startListening();
+    });
+
+    document.addEventListener('keyup', e => {
+      if (e.code !== 'Space') return;
+      stopListening();
     });
   }
 

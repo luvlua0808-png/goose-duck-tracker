@@ -61,7 +61,7 @@ const MAP_SPACESHIP = {
   nodes: [
     { id: 'shower',    label: '池塘淋浴间', x: 410, y: 30  },
     { id: 'quarters',  label: '船员宿舍',   x: 410, y: 120 },
-    { id: 'engine_r',  label: '电机室',     x: 150, y: 160 },
+    { id: 'engine_r',  label: '电机室',     x: 150, y: 160, aliases: ['电机石', '电击室', '电击石', '电机事', '电机房'] },
     { id: 'engine',    label: '发动机',     x: 55,  y: 290 },
     { id: 'reactor',   label: '反应器',     x: 130, y: 290 },
     { id: 'security',  label: '保安室',     x: 240, y: 270 },
@@ -69,13 +69,13 @@ const MAP_SPACESHIP = {
     { id: 'medical',   label: '医疗室',     x: 380, y: 290 },
     { id: 'weapons',   label: '武器房',     x: 580, y: 270 },
     { id: 'prison',    label: '监狱',       x: 240, y: 380 },
-    { id: 'lounge',    label: '娱乐室',     x: 480, y: 360 },
+    { id: 'lounge',    label: '娱乐室',     x: 480, y: 360, aliases: ['娱乐石', '鱼乐室', '鱼乐石', '娱乐事', '娱乐式', '娱乐坊'] },
     { id: 'storage',   label: '储物间',     x: 550, y: 420 },
     { id: 'comms',     label: '通讯间',     x: 690, y: 310 },
     { id: 'bridge',    label: '桥梁',       x: 770, y: 310 },
     { id: 'hatchery',  label: '孵化器',     x: 160, y: 450 },
     { id: 'cafeteria', label: '食堂',       x: 330, y: 460 },
-    { id: 'cargo',     label: '货舱',       x: 530, y: 490 },
+    { id: 'cargo',     label: '货舱',       x: 530, y: 490, aliases: ['货仓', '货场', '货长'] },
   ],
   edges: [
     ['shower',    'quarters'],
@@ -129,7 +129,7 @@ const MAP_CHURCH = {
     { id: 'gateway',      label: '进出口',       x: 380, y: 470 },
     { id: 'port',         label: '港口',         x: 580, y: 470 },
     { id: 'dock',         label: '码头',         x: 380, y: 555 },
-    { id: 'shack',        label: '开膛手的棚屋', x: 820, y: 470 },
+    { id: 'shack',        label: '开膛手的棚屋', x: 820, y: 470, aliases: ['开膛手的澎湖', '开膛手的蓬屋', '开膛手的篷屋', '澎湖', '棚屋', '蓬屋'] },
   ],
   edges: [
     ['tavern',       'mayor'],
