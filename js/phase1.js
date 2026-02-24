@@ -166,36 +166,23 @@ const Phase1 = (() => {
       _updateOpenRoleChips();
     }
 
-    // 防止按钮抢走输入焦点导致触发系统级听写
-    voiceBtn.addEventListener('mousedown', e => e.preventDefault());
+    // ── 核心：启动/停止识别 ───────────────────────────────────
 
-    voiceBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
+    function startListening() {
       const SR = _getSpeechRecognition();
       if (!SR) {
         alert('当前浏览器不支持语音识别（建议使用 Chrome/Edge，并用 http://localhost 打开本地页面）');
         return;
       }
-
-      // 正在监听：再次点击停止
-      if (listening && recognition) {
-        recognition.stop();
-        return;
-      }
+      if (listening) return;
 
       recognition = new SR();
       recognition.lang = 'zh-CN';
-      // continuous 可以让一次录入包含更多片段；用静默计时自动结束
       recognition.continuous = true;
       recognition.interimResults = false;
 
       _bufferText = '';
-      if (_silenceTimer) {
-        clearTimeout(_silenceTimer);
-        _silenceTimer = null;
-      }
+      if (_silenceTimer) { clearTimeout(_silenceTimer); _silenceTimer = null; }
 
       listening = true;
       voiceBtn.textContent = '🛑';
@@ -203,38 +190,29 @@ const Phase1 = (() => {
       console.log('[voice] start');
 
       recognition.onresult = e => {
-        // 累计本次识别到的所有片段
         let chunk = '';
         try {
           for (let i = e.resultIndex; i < e.results.length; i++) {
             const t = e.results[i] && e.results[i][0] ? e.results[i][0].transcript : '';
             if (t) chunk += t;
           }
-        } catch (_) {
-          // ignore
-        }
+        } catch (_) {}
         if (chunk) _bufferText += chunk;
-
         console.log('[voice] result raw:', _bufferText);
-
-        // 如果持续有结果，延后结束；一段时间无新结果自动 stop
-        if (_silenceTimer) clearTimeout(_silenceTimer);
-        _silenceTimer = setTimeout(() => {
-          if (recognition) recognition.stop();
-        }, 5000);
       };
+
       recognition.onerror = (err) => {
         const msg = err && err.error ? err.error : 'unknown';
         console.warn('[voice] error:', err);
-        alert('语音识别失败：' + msg + '（请确认已允许麦克风权限，并使用 http://localhost 打开）');
-      };
-      recognition.onend = () => {
-        if (_silenceTimer) {
-          clearTimeout(_silenceTimer);
-          _silenceTimer = null;
+        if (msg !== 'aborted') {
+          alert('语音识别失败：' + msg + '（请确认已允许麦克风权限，并使用 http://localhost 打开）');
         }
+      };
+
+      recognition.onend = () => {
+        if (_silenceTimer) { clearTimeout(_silenceTimer); _silenceTimer = null; }
         listening = false;
-        voiceBtn.textContent = '🎙';
+        voiceBtn.textContent = '🎙(空格)';
         voiceBtn.classList.remove('listening');
         console.log('[voice] end, buffer:', _bufferText);
 
@@ -245,7 +223,7 @@ const Phase1 = (() => {
           console.warn('[voice] 未匹配到角色，原始识别文字：', _bufferText);
           alert('未识别到角色名\n原始识别：「' + _bufferText + '」\n请截图反馈以便补充别名');
         } else {
-          console.warn('[voice] ASR 无任何输出，麦克风可能没有收到声音');
+          console.warn('[voice] ASR 无任何输出');
           alert('语音未识别到任何内容\n对于生僻字角色（如鹈鹕），建议直接用搜索框输入拼音首字母「th」');
         }
         _bufferText = '';
@@ -256,9 +234,42 @@ const Phase1 = (() => {
       } catch (e) {
         // 避免重复 start 抛错导致按钮卡住
         listening = false;
-        voiceBtn.textContent = '🎙';
+        voiceBtn.textContent = '🎙(空格)';
         voiceBtn.classList.remove('listening');
       }
+    }
+
+    function stopListening() {
+      if (listening && recognition) recognition.stop();
+    }
+
+    // ── 按钮点击：切换开始/停止 ──────────────────────────────
+    voiceBtn.textContent = '🎙(空格)';
+    voiceBtn.addEventListener('mousedown', e => e.preventDefault());
+    voiceBtn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (listening) { stopListening(); } else { startListening(); }
+    });
+
+    // ── 空格键：按住开始，松开停止 ───────────────────────────
+    // 只在初始化阶段（phase-init 可见）且焦点不在输入框时响应
+    document.addEventListener('keydown', e => {
+      if (e.code !== 'Space') return;
+      const initSection = document.getElementById('phase-init');
+      if (!initSection || !initSection.classList.contains('active')) return;
+      const tag = document.activeElement && document.activeElement.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.repeat) return;
+      e.preventDefault();
+      startListening();
+    });
+
+    document.addEventListener('keyup', e => {
+      if (e.code !== 'Space') return;
+      const initSection = document.getElementById('phase-init');
+      if (!initSection || !initSection.classList.contains('active')) return;
+      stopListening();
     });
 
     function _filterChips(q) {
