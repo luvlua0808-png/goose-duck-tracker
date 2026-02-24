@@ -215,13 +215,7 @@ const Phase1 = (() => {
         }
         if (chunk) _bufferText += chunk;
 
-        console.log('[voice] result:', _bufferText);
-        const roles = _pickRolesFromText(_bufferText);
-        if (!roles || roles.length === 0) {
-          alert('未识别到角色名，请重试（建议说清晰的中文角色全名）');
-          return;
-        }
-        _applyOpenRoles(roles);
+        console.log('[voice] result raw:', _bufferText);
 
         // 如果持续有结果，延后结束；一段时间无新结果自动 stop
         if (_silenceTimer) clearTimeout(_silenceTimer);
@@ -242,7 +236,16 @@ const Phase1 = (() => {
         listening = false;
         voiceBtn.textContent = '🎙';
         voiceBtn.classList.remove('listening');
-        console.log('[voice] end');
+        console.log('[voice] end, buffer:', _bufferText);
+
+        const roles = _pickRolesFromText(_bufferText);
+        if (roles && roles.length > 0) {
+          _applyOpenRoles(roles);
+        } else if (_bufferText) {
+          console.warn('[voice] 未匹配到角色，原始识别文字：', _bufferText);
+          alert('未识别到角色名\n原始识别：「' + _bufferText + '」\n请截图反馈以便补充别名');
+        }
+        _bufferText = '';
       };
 
       try {
