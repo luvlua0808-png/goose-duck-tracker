@@ -149,7 +149,9 @@ const Phase1 = (() => {
       const t = (text || '').replace(/\s+/g, '');
       const hits = [];
       ROLES.forEach(r => {
-        if (r && r.name && t.includes(r.name)) hits.push(r.name);
+        if (!r || !r.name) return;
+        if (t.includes(r.name)) { hits.push(r.name); return; }
+        if (r.aliases && r.aliases.some(a => t.includes(a))) hits.push(r.name);
       });
       return [...new Set(hits)];
     }

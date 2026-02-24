@@ -9,11 +9,11 @@ const ROLES = [
   { name: '工程师',   faction: 'goose',   initials: 'gcs'  },
   { name: '通灵者',   faction: 'goose',   initials: 'tlz'  },
   { name: '侦探',     faction: 'goose',   initials: 'zt'   },
-  { name: '星界行者', faction: 'goose',   initials: 'xjxz' },
-  { name: '观鸟者',   faction: 'goose',   initials: 'gnz'  },
+  { name: '星界行者', faction: 'goose',   initials: 'xjxz', aliases: ['星际行者', '星界行着', '星界行这'] },
+  { name: '观鸟者',   faction: 'goose',   initials: 'gnz',  aliases: ['关鸟者', '官鸟者', '管鸟者'] },
   { name: '跟踪者',   faction: 'goose',   initials: 'gzz'  },
   { name: '加拿大鹅', faction: 'goose',   initials: 'jnde' },
-  { name: '殡仪员',   faction: 'goose',   initials: 'byy'  },
+  { name: '殡仪员',   faction: 'goose',   initials: 'byy',  aliases: ['宾仪员', '滨仪员', '濒仪员', '宾义员', '宾一员'] },
   { name: '模仿者',   faction: 'goose',   initials: 'mfz'  },
   { name: '复仇者',   faction: 'goose',   initials: 'fcz'  },
   { name: '士兵',     faction: 'goose',   initials: 'sb'   },
@@ -23,24 +23,24 @@ const ROLES = [
 
   // 🦆 鸭阵营 (10)
   { name: '专业杀手', faction: 'duck',    initials: 'zyss' },
-  { name: '隐形鸭',   faction: 'duck',    initials: 'yxy'  },
+  { name: '隐形鸭',   faction: 'duck',    initials: 'yxy',  aliases: ['隐形呀', '银行鸭', '隐行鸭'] },
   { name: '变形者',   faction: 'duck',    initials: 'bxz'  },
   { name: '爆炸王',   faction: 'duck',    initials: 'bzw'  },
   { name: '刺客',     faction: 'duck',    initials: 'ck'   },
   { name: '食鸟鸭',   faction: 'duck',    initials: 'sny'  },
   { name: '间谍',     faction: 'duck',    initials: 'jd'   },
-  { name: '巫医',     faction: 'duck',    initials: 'wy'   },
+  { name: '巫医',     faction: 'duck',    initials: 'wy',   aliases: ['无医', '吴医', '巫一'] },
   { name: '掠夺者',   faction: 'duck',    initials: 'ldz'  },
   { name: '狙击手',   faction: 'duck',    initials: 'jjs'  },
 
   // 🕊️ 中立阵营 (7)
   { name: '呆呆鸟',   faction: 'neutral', initials: 'ddn'  },
-  { name: '秃鹫',     faction: 'neutral', initials: 'tj'   },
+  { name: '秃鹫',     faction: 'neutral', initials: 'tj',   aliases: ['秃就', '图就', '秃旧', '图鹫'] },
   { name: '鸽子',     faction: 'neutral', initials: 'gz'   },
-  { name: '鹈鹕',     faction: 'neutral', initials: 'th'   },
+  { name: '鹈鹕',     faction: 'neutral', initials: 'th',   aliases: ['提壶', '提鹄', '提湖', '啼壶', '鹈壶'] },
   { name: '猎鹰',     faction: 'neutral', initials: 'ly'   },
   { name: '布谷鸟',   faction: 'neutral', initials: 'bgn'  },
-  { name: '锦鸡',     faction: 'neutral', initials: 'jj'   },
+  { name: '锦鸡',     faction: 'neutral', initials: 'jj',   aliases: ['近鸡', '金鸡', '紧鸡', '劲鸡'] },
 ];
 
 const FACTION_META = {
