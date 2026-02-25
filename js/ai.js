@@ -309,10 +309,31 @@ const AI = (() => {
 
   // ── 更新AI面板中的阵营统计 ────────────────────────────────
   function _updateAIFactionStats() {
-    const stats = State.getFactionStats();
-    document.getElementById('ai-faction-goose').textContent = stats.goose.total;
-    document.getElementById('ai-faction-duck').textContent = stats.duck.total;
-    document.getElementById('ai-faction-neutral').textContent = stats.neutral.total;
+    const { config, players } = State.get();
+    const totalPlayers = config.playerCount;
+
+    // 统计存活且已知阵营的玩家
+    let aliveGoose = 0, aliveDuck = 0, aliveNeutral = 0, aliveUnknown = 0;
+    let totalAlive = 0;
+
+    Object.values(players).forEach(p => {
+      if (!p) return;
+      if (p.alive) {
+        totalAlive++;
+        if (p.faction === 'goose') aliveGoose++;
+        else if (p.faction === 'duck') aliveDuck++;
+        else if (p.faction === 'neutral') aliveNeutral++;
+        else aliveUnknown++;
+      }
+    });
+
+    // 更新显示
+    document.getElementById('ai-alive-total').textContent = totalAlive;
+    document.getElementById('ai-total-players').textContent = totalPlayers;
+    document.getElementById('ai-faction-goose').textContent = aliveGoose;
+    document.getElementById('ai-faction-duck').textContent = aliveDuck;
+    document.getElementById('ai-faction-neutral').textContent = aliveNeutral;
+    document.getElementById('ai-faction-unknown').textContent = aliveUnknown;
   }
 
   // ── 弹出/嵌入切换 ───────────────────────────────────────

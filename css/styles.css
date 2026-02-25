@@ -777,37 +777,65 @@ body {
 /* 阵营统计置顶区域 */
 .ai-faction-stats {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
   padding: 12px 14px;
   background: rgba(0,0,0,0.2);
   border-bottom: 1px solid rgba(74,42,122,0.3);
 }
 
+.ai-alive-count {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.ai-alive-count span {
+  color: #c4b5fd;
+  font-weight: 700;
+}
+
+.ai-faction-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 .ai-faction-item {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
+  gap: 3px;
+  padding: 3px 8px;
   background: rgba(124,58,237,0.08);
   border-radius: var(--radius-sm);
   border: 1px solid rgba(74,42,122,0.3);
 }
 
+.ai-faction-item.unknown {
+  background: rgba(100,100,100,0.1);
+  border-color: rgba(100,100,100,0.3);
+}
+
 .ai-faction-icon {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .ai-faction-name {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-secondary);
 }
 
 .ai-faction-count {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #c4b5fd;
-  min-width: 16px;
+  min-width: 14px;
   text-align: center;
+}
+
+.ai-faction-item.unknown .ai-faction-count {
+  color: var(--text-muted);
 }
 
 .ai-result-body {
