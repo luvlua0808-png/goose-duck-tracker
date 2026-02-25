@@ -17,6 +17,7 @@ const Phase2 = (() => {
     });
 
     _bindVoiceSighting();
+    _initToast();
 
     document.getElementById('btn-enter-meeting').addEventListener('click', () => {
       if (window.AI && typeof window.AI.clearResult === 'function') {
@@ -124,91 +125,125 @@ const Phase2 = (() => {
 
     // ── 核心：启动/停止识别 ───────────────────────────────────
 
-    function startListening() {
-      const SR = getSR();
+    function _startRecognition(onResult, onEnd) {
+      const aliConfig = AI.getAliyunConfig();
+      const hotWords = _getHotWords();
+      if (aliConfig.service === 'aliyun' && aliConfig.appKey && aliConfig.akId && aliConfig.akSecret) {
+        AliyunASR.start(
+          aliConfig,
+          hotWords,
+          onResult,
+          onEnd,
+          (err) => {
+            console.error('[voice] aliyun error:', err);
+            _showToast('阿里云语音连接失败，切换为内置识别');
+            _startChromeRecognition(onResult, onEnd);
+          }
+        );
+      } else {
+        _startChromeRecognition(onResult, onEnd);
+      }
+    }
+
+    function _startChromeRecognition(onResult, onEnd) {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SR) {
-        alert('当前浏览器不支持语音识别（建议使用 Chrome/Edge，并用 http://localhost 打开本地页面）');
+        _showToast('浏览器不支持语音识别');
         return;
       }
-      if (_voiceListening) return;
-
-      const { config } = State.get();
-      const mapDef = MAPS[config.map];
-
       _voiceRecognition = new SR();
       _voiceRecognition.lang = 'zh-CN';
       _voiceRecognition.continuous = true;
       _voiceRecognition.interimResults = false;
-
-      _voiceBufferText = '';
-      if (_voiceSilenceTimer) { clearTimeout(_voiceSilenceTimer); _voiceSilenceTimer = null; }
-
-      _voiceListening = true;
-      btn.classList.add('listening');
-      btn.textContent = '🛑 正在听…';
-
       _voiceRecognition.onresult = ev => {
         let chunk = '';
-        try {
-          for (let i = ev.resultIndex; i < ev.results.length; i++) {
-            const t = ev.results[i] && ev.results[i][0] ? ev.results[i][0].transcript : '';
-            if (t) chunk += t;
-          }
-        } catch (_) {}
-        if (chunk) _voiceBufferText += chunk;
-        console.log('[voice-map] result raw:', _voiceBufferText);
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          const t = ev.results[i][0].transcript;
+          if (t) chunk += t;
+        }
+        if (chunk) onResult(chunk);
       };
+      _voiceRecognition.onend = onEnd;
+      _voiceRecognition.start();
+    }
 
-      _voiceRecognition.onerror = err => {
-        const msg = err && err.error ? err.error : 'unknown';
-        if (msg !== 'aborted') {
-          alert('语音识别失败：' + msg + '（请确认已允许麦克风权限，并使用 http://localhost 打开）');
-        }
-      };
-
-      _voiceRecognition.onend = () => {
-        if (_voiceSilenceTimer) { clearTimeout(_voiceSilenceTimer); _voiceSilenceTimer = null; }
-        _voiceListening = false;
-        btn.classList.remove('listening');
-        btn.textContent = '🎙 语音(空格)';
-
-        console.log('[voice-map] end, buffer:', _voiceBufferText);
-        if (!_voiceBufferText) {
-          alert('语音未识别到任何内容，请重试');
-          return;
-        }
-
-        const nums   = parseNums(_voiceBufferText);
-        const roomId = pickRoomId(_voiceBufferText, mapDef);
-
-        if (!roomId) {
-          alert('未识别到地点\n原始识别：「' + _voiceBufferText + '」\n请截图反馈以便补充别名');
-          _voiceBufferText = '';
-          return;
-        }
-        if (!nums || nums.length === 0) {
-          alert('未识别到玩家编号\n原始识别：「' + _voiceBufferText + '」\n请按"号码 + 地点"说，例如：3号 食堂');
-          _voiceBufferText = '';
-          return;
-        }
-
-        applySighting(roomId, nums);
-        _voiceBufferText = '';
-      };
-
-      try {
-        _voiceRecognition.start();
-      } catch (_) {
-        _voiceListening = false;
-        btn.classList.remove('listening');
-        btn.textContent = '🎙 语音(空格)';
+    function _stopRecognition() {
+      const aliConfig = AI.getAliyunConfig();
+      if (aliConfig.service === 'aliyun') {
+        AliyunASR.stop();
+      } else if (_voiceRecognition) {
+        _voiceRecognition.stop();
       }
     }
 
-    function stopListening() {
-      if (_voiceListening && _voiceRecognition) {
-        _voiceRecognition.stop();
+    function _getHotWords() {
+      const { config } = State.get();
+      const mapDef = MAPS[config.map];
+      const roomNames = mapDef.nodes.map(n => n.label);
+      mapDef.nodes.forEach(n => { if(n.aliases) roomNames.push(...n.aliases); });
+      const roleNames = ROLES.map(r => r.name);
+      ROLES.forEach(r => { if(r.aliases) roleNames.push(...r.aliases); });
+      return [
+        ...Array.from({length: 16}, (_, i) => `${i + 1}号`),
+        ...roomNames,
+        ...roleNames,
+        "可疑", "有问题", "怀疑", "信任", "没问题", "好人", "是鸭", "鸭子", "锁了"
+      ];
+    }
+
+    function parseVoiceResult(text) {
+      const t = (text || '').replace(/\s+/g, '');
+      const playerMatch = t.match(/(\d+)号?/);
+      const playerNum = playerMatch ? parseInt(playerMatch[1]) : null;
+
+      const isSus = /(可疑|有问题|怀疑)/.test(t);
+      const isTrust = /(信任|没问题|好人)/.test(t);
+      const isDuck = /(是鸭|鸭子|锁了)/.test(t);
+
+      const { config } = State.get();
+      const mapDef = MAPS[config.map];
+      const roomId = pickRoomId(t, mapDef);
+
+      if (playerNum && (isSus || isTrust || isDuck)) {
+        const trustLevel = isDuck ? 'confirmed_duck' : isSus ? 'suspicious' : 'trusted';
+        State.updatePlayerTrust(playerNum, trustLevel);
+        _showToast(`${playerNum}号 → 标记为「${TRUST_LABELS[trustLevel]}」`);
+        _flashNode(playerNum, trustLevel);
+      } else if (playerNum && roomId) {
+        const node = mapDef.nodes.find(n => n.id === roomId);
+        applySighting(roomId, [playerNum]);
+        _showToast(`${playerNum}号 → ${node.label}`);
+      } else if (playerNum) {
+        _showToast(`识别到${playerNum}号，未匹配到地点或指令`);
+      } else {
+        _showToast('未识别到有效内容');
       }
+    }
+
+    function startListening() {
+      if (_voiceListening) return;
+      _voiceBufferText = '';
+      _startRecognition(
+        (text) => {
+          _voiceBufferText += text;
+          console.log('[voice-map] chunk:', text);
+        },
+        () => {
+          _voiceListening = false;
+          btn.classList.remove('listening');
+          btn.textContent = '🎙 语音(空格)';
+          if (_voiceBufferText) parseVoiceResult(_voiceBufferText);
+          _voiceBufferText = '';
+        }
+      );
+      _voiceListening = true;
+      btn.classList.add('listening');
+      btn.textContent = '🛑 正在听…';
+    }
+
+    function stopListening() {
+      if (!_voiceListening) return;
+      _stopRecognition();
     }
 
     // ── 按钮点击：切换开始/停止 ──────────────────────────────
@@ -340,6 +375,44 @@ const Phase2 = (() => {
       const newEl = document.querySelector(`.map-node[data-id="${node.id}"]`);
       if (newEl) _openPopover(node, newEl);
     }
+  }
+
+  // ── UI 反馈 (Toast & Flash) ─────────────────────────────
+
+  function _initToast() {
+    if (!document.getElementById('toast-container')) {
+      const container = document.createElement('div');
+      container.id = 'toast-container';
+      container.className = 'toast-container';
+      document.body.appendChild(container);
+    }
+  }
+
+  function _showToast(msg) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = msg;
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 2000);
+  }
+
+  function _flashNode(playerNum, trustType) {
+    // 这里简单实现：找到所有包含该玩家目击的节点闪烁，或者如果玩家在当前路径最后一个点目击，闪烁该点
+    // 需求描述为“对应玩家编号的节点旁”，地图上目前节点是地点。
+    // 我们让地图上所有标记了该玩家目击的节点闪烁一下。
+    const nodes = document.querySelectorAll('.map-node');
+    nodes.forEach(nodeEl => {
+      const roomId = nodeEl.dataset.id;
+      const sightings = State.get().currentSightings[roomId] || [];
+      if (sightings.includes(Number(playerNum))) {
+        nodeEl.classList.add('trust-flash', `flash-${trustType}`);
+        setTimeout(() => {
+          nodeEl.classList.remove('trust-flash', `flash-${trustType}`);
+        }, 600);
+      }
+    });
   }
 
   // ── 目击浮层 ──────────────────────────────────────────────

@@ -5,12 +5,17 @@
 const Export = (() => {
 
   function buildText() {
-    const { config, players, rounds, round } = State.get();
+    const { config, players, rounds, round, myRole } = State.get();
     const mapDef = MAPS[config.map];
     const lines = [];
 
     // ── 标题 ──
     lines.push('== 鹅鸭杀 本局复盘 ==');
+    if (myRole) {
+      const role = ROLES.find(r => r.name === myRole);
+      const factionLabel = role ? { goose: '鹅', duck: '鸭', neutral: '中立' }[role.faction] : '未知';
+      lines.push(`我的角色：${myRole}（${factionLabel}阵营）`);
+    }
     lines.push(`地图：${mapDef.name} | 人数：${config.playerCount}人 | ${config.factions.goose}鹅${config.factions.duck}鸭${config.factions.neutral}中立`);
     lines.push(`明牌角色：${config.openRoles.length > 0 ? config.openRoles.join('、') : '无'}`);
     lines.push('');

@@ -82,6 +82,14 @@
             </div>
           </div>
 
+          <!-- 我的角色 -->
+          <div class="config-block my-role-config">
+            <label class="config-label">我的角色（真实身份）</label>
+            <div id="my-role-container" class="my-role-container">
+              <!-- 由 JS 渲染 -->
+            </div>
+          </div>
+
           <button class="btn btn-primary btn-large" id="btn-start-game">开始游戏 →</button>
         </div>
 
@@ -189,21 +197,53 @@
 
   <!-- ===== AI 设置模态框 ===== -->
   <div id="modal-ai-settings" class="modal-overlay hidden">
-    <div class="modal-box">
-      <h3>AI 设置</h3>
-      <p class="ai-settings-desc">使用<strong>硅基流动</strong>接入 DeepSeek-V3，API Key 仅存储在本地浏览器，不会上传。</p>
-      <div class="ai-settings-field">
-        <label for="ai-api-key-input">API Key</label>
-        <input type="password" id="ai-api-key-input" placeholder="sk-..." autocomplete="off" />
-        <button class="btn btn-sm btn-secondary" id="btn-ai-key-toggle" type="button">显示</button>
+    <div class="modal-box ai-settings-modal">
+      <h3>AI 与语音设置</h3>
+      <p class="ai-settings-desc">配置 AI 推理（硅基流动）与语音识别（阿里云）参数。Key 仅存本地。</p>
+      
+      <div class="settings-section">
+        <h4>🤖 AI 推理设置</h4>
+        <div class="ai-settings-field">
+          <label for="ai-api-key-input">硅基流动 API Key</label>
+          <div class="input-with-btn">
+            <input type="password" id="ai-api-key-input" placeholder="sk-..." autocomplete="off" />
+            <button class="btn btn-sm btn-secondary" id="btn-ai-key-toggle" type="button">显示</button>
+          </div>
+        </div>
+        <div class="ai-settings-field">
+          <label>推理模型</label>
+          <div class="ai-model-display">deepseek-ai/DeepSeek-V3</div>
+        </div>
       </div>
-      <div class="ai-settings-field">
-        <label>模型</label>
-        <div class="ai-model-display">deepseek-ai/DeepSeek-V3 <span class="ai-model-note">（via 硅基流动）</span></div>
+
+      <div class="settings-section">
+        <h4>🎙️ 语音识别设置</h4>
+        <div class="ai-settings-field">
+          <label>服务提供商</label>
+          <select id="speech-service-select" class="settings-select">
+            <option value="chrome">Chrome 浏览器内置（需科学上网）</option>
+            <option value="aliyun">阿里云 Paraformer（中文更准）</option>
+          </select>
+        </div>
+        <div id="aliyun-settings" class="hidden">
+          <div class="ai-settings-field">
+            <label for="aliyun-ak-id">Access Key ID</label>
+            <input type="text" id="aliyun-ak-id" placeholder="LTAI..." autocomplete="off" />
+          </div>
+          <div class="ai-settings-field">
+            <label for="aliyun-ak-secret">Access Key Secret</label>
+            <input type="password" id="aliyun-ak-secret" placeholder="***" autocomplete="off" />
+          </div>
+          <div class="ai-settings-field">
+            <label for="aliyun-appkey">AppKey</label>
+            <input type="text" id="aliyun-appkey" placeholder="应用 AppKey" autocomplete="off" />
+          </div>
+        </div>
       </div>
+
       <div class="modal-actions">
         <button class="btn btn-secondary" id="ai-settings-cancel">取消</button>
-        <button class="btn btn-primary" id="ai-settings-save">保存</button>
+        <button class="btn btn-primary" id="ai-settings-save">保存配置</button>
       </div>
     </div>
   </div>
@@ -251,6 +291,7 @@
   <script src="js/phase3.js"></script>
   <script src="js/export.js"></script>
   <script src="js/ai.js"></script>
+  <script src="js/aliyun-asr.js"></script>
   <script src="js/app.js"></script>
 
   <!-- 署名水印 -->

@@ -82,6 +82,40 @@ body {
 .btn-primary { background: var(--accent-blue); color: #0d1117; border-color: var(--accent-blue); }
 .btn-primary:hover { background: #79b8ff; }
 .btn-primary:active { transform: scale(0.97); }
+.toast-container {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 8px; z-index: 1000; pointer-events: none;
+}
+.toast {
+  background: rgba(0, 0, 0, 0.8); color: white; padding: 10px 20px;
+  border-radius: 20px; font-size: 0.9rem; animation: toast-in-out 2s forwards;
+}
+@keyframes toast-in-out {
+  0% { opacity: 0; transform: translateY(20px); }
+  15% { opacity: 1; transform: translateY(0); }
+  85% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-20px); }
+}
+.trust-flash { animation: trust-flash-anim 0.6s ease-out; }
+@keyframes trust-flash-anim {
+  0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.8); }
+  100% { box-shadow: 0 0 20px 20px rgba(255, 255, 255, 0); }
+}
+.flash-suspicious { animation-name: flash-susp-anim; }
+.flash-trusted { animation-name: flash-trust-anim; }
+.flash-confirmed_duck { animation-name: flash-duck-anim; }
+@keyframes flash-susp-anim {
+  0% { box-shadow: 0 0 0 0 rgba(240, 180, 41, 0.8); }
+  100% { box-shadow: 0 0 20px 20px rgba(240, 180, 41, 0); }
+}
+@keyframes flash-trust-anim {
+  0% { box-shadow: 0 0 0 0 rgba(88, 166, 255, 0.8); }
+  100% { box-shadow: 0 0 20px 20px rgba(88, 166, 255, 0); }
+}
+@keyframes flash-duck-anim {
+  0% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.8); }
+  100% { box-shadow: 0 0 20px 20px rgba(255, 68, 68, 0); }
+}
 .btn-secondary { background: var(--bg-elevated); color: var(--text-primary); border-color: var(--border-light); }
 .btn-secondary:hover { background: var(--bg-hover); }
 .btn-danger { background: #2d0f0e; color: var(--duck-color); border-color: var(--duck-border); }
@@ -188,6 +222,61 @@ body {
   transition: all var(--transition);
 }
 .open-roles-search-clear:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+/* ── 我的角色选择器 ── */
+.my-role-selector-wrap { position: relative; }
+.my-role-input {
+  width: 100%; background: var(--bg-elevated); border: 1px solid var(--border-light);
+  border-radius: var(--radius-md); color: var(--text-primary);
+  font-size: 0.95rem; padding: 10px 14px; font-family: inherit;
+  transition: border-color var(--transition);
+}
+.my-role-input:focus { outline: none; border-color: var(--accent-blue); }
+
+.my-role-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); margin-top: 4px; max-height: 240px;
+  overflow-y: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.my-role-item {
+  padding: 8px 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+  transition: background var(--transition); border-bottom: 1px solid var(--border-light);
+}
+.my-role-item:last-child { border-bottom: none; }
+.my-role-item:hover { background: var(--bg-hover); }
+.my-role-item .role-name { font-weight: 700; }
+.my-role-item .faction-label { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; }
+
+.selected-role-box {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.selected-role-box .role-icon { font-size: 1.2rem; }
+.selected-role-box .role-name { font-weight: 700; flex: 1; }
+.selected-role-box .faction-tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; }
+.selected-role-box .role-clear-btn {
+  background: transparent; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 1rem; padding: 4px;
+}
+.selected-role-box .role-clear-btn:hover { color: var(--duck-color); }
+
+/* 阵营颜色微调 */
+.faction-goose .faction-label, .faction-goose .faction-tag { background: rgba(74, 232, 96, 0.15); color: var(--goose-color); }
+.faction-duck .faction-label, .faction-duck .faction-tag { background: rgba(88, 166, 255, 0.15); color: var(--duck-color); }
+.faction-neutral .faction-label, .faction-neutral .faction-tag { background: rgba(240, 180, 41, 0.15); color: var(--neutral-color); }
+.selected-role-box.faction-goose { border-color: var(--goose-color); }
+.selected-role-box.faction-duck { border-color: var(--duck-color); }
+.ai-settings-modal { width: 440px; max-width: 90vw; }
+.settings-section { margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.03); border-radius: var(--radius-md); border: 1px solid var(--border-light); }
+.settings-section h4 { font-size: 0.95rem; margin-bottom: 12px; color: var(--text-primary); border-bottom: 1px solid var(--border-light); padding-bottom: 6px; }
+.ai-settings-field { margin-bottom: 12px; }
+.ai-settings-field label { display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 4px; }
+.input-with-btn { display: flex; gap: 8px; }
+.input-with-btn input { flex: 1; }
+.settings-select { width: 100%; background: var(--bg-elevated); border: 1px solid var(--border-light); border-radius: var(--radius-sm); color: var(--text-primary); padding: 8px; font-family: inherit; }
+.ai-model-display { font-size: 0.9rem; color: var(--accent-blue); font-weight: 600; }
 .open-roles-voice-btn {
   background: var(--bg-elevated);
   border: 1px solid var(--border);

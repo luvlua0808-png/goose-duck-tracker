@@ -9,6 +9,7 @@ function createDefaultState() {
   return {
     phase: 'init',          // 'init' | 'game' | 'meeting'
     round: 1,
+    myRole: null,           // 我的角色名
     config: {
       playerCount: 13,
       map: 'spaceship',
@@ -92,6 +93,11 @@ const State = {
     gameState.currentPath = [];
     gameState.currentSightings = {};
     gameState.phase = 'game';
+    saveState();
+  },
+
+  setMyRole(roleName) {
+    gameState.myRole = roleName;
     saveState();
   },
 
@@ -254,6 +260,14 @@ const State = {
     });
 
     return stats;
+  },
+
+  updatePlayerTrust(playerNum, trustLevel) {
+    const p = gameState.players[playerNum];
+    if (p) {
+      p.trust = trustLevel;
+      saveState();
+    }
   },
 
   reset() {

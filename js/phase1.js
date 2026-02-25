@@ -9,12 +9,13 @@ const Phase1 = (() => {
     _bindMapSelector();
     _bindFactionInputs();
     _renderOpenRoles();
+    _renderMyRole();
     _bindStartGame();
     render();
   }
 
   function render() {
-    const { config, phase } = State.get();
+    const { config, phase, myRole } = State.get();
     const gameStarted = phase !== 'init';
 
     // 玩家人数
@@ -30,6 +31,8 @@ const Phase1 = (() => {
     _updateFactionTotal();
     // 明牌角色
     _updateOpenRoleChips();
+    // 我的角色
+    _updateMyRoleDisplay(myRole);
 
     // 游戏已开始：锁定左栏，隐藏开始按钮，显示提示
     const initLeft = document.querySelector('.init-left');
@@ -141,8 +144,90 @@ const Phase1 = (() => {
     let _silenceTimer = null;
     let _bufferText = '';
 
-    function _getSpeechRecognition() {
-      return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+    // ── 语音识别相关 ──────────────────────────────────────────
+
+    function _getHotWords() {
+      const roomNames = [];
+      Object.values(MAPS).forEach(m => {
+        m.nodes.forEach(n => {
+          roomNames.push(n.label);
+          if (n.aliases) roomNames.push(...n.aliases);
+        });
+      });
+
+      const roleNames = [];
+      ROLES.forEach(r => {
+        roleNames.push(r.name);
+        if (r.aliases) roleNames.push(...r.aliases);
+      });
+
+      return [
+        ...Array.from({length: 16}, (_, i) => `${i + 1}号`),
+        ...roomNames,
+        ...roleNames,
+        "可疑", "有问题", "怀疑", "信任", "没问题", "好人", "是鸭", "鸭子", "锁了"
+      ];
+    }
+
+    function _startRecognition(onResult, onEnd) {
+      const aliConfig = AI.getAliyunConfig();
+      if (aliConfig.service === 'aliyun' && aliConfig.appKey && aliConfig.akId && aliConfig.akSecret) {
+        AliyunASR.start(
+          aliConfig,
+          _getHotWords(),
+          onResult,
+          onEnd,
+          (err) => {
+            console.error('[voice] aliyun error:', err);
+            const msgs = {
+              no_ak: '请先在「AI设置」中填写阿里云 AccessKey',
+              auth_failed: '阿里云鉴权失败，请检查 Key 是否正确',
+            };
+            if (err !== 'WebSocket Error') {
+              alert(msgs[err] || '阿里云语音连接失败，已切换为 Chrome 内置识别');
+            }
+            _startChromeRecognition(onResult, onEnd);
+          }
+        );
+      } else {
+        _startChromeRecognition(onResult, onEnd);
+      }
+    }
+
+    function _startChromeRecognition(onResult, onEnd) {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        alert('当前浏览器不支持语音识别（建议使用 Chrome/Edge）');
+        return;
+      }
+      recognition = new SR();
+      recognition.lang = 'zh-CN';
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.onresult = e => {
+        let chunk = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const t = e.results[i][0].transcript;
+          if (t) chunk += t;
+        }
+        if (chunk) onResult(chunk);
+      };
+      recognition.onend = onEnd;
+      recognition.onerror = (err) => {
+        if (err.error !== 'aborted') {
+          console.error('[voice] chrome error:', err);
+        }
+      };
+      recognition.start();
+    }
+
+    function _stopRecognition() {
+      const aliConfig = AI.getAliyunConfig();
+      if (aliConfig.service === 'aliyun') {
+        AliyunASR.stop();
+      } else if (recognition) {
+        recognition.stop();
+      }
     }
 
     function _pickRolesFromText(text) {
@@ -166,81 +251,36 @@ const Phase1 = (() => {
       _updateOpenRoleChips();
     }
 
-    // ── 核心：启动/停止识别 ───────────────────────────────────
-
     function startListening() {
-      const SR = _getSpeechRecognition();
-      if (!SR) {
-        alert('当前浏览器不支持语音识别（建议使用 Chrome/Edge，并用 http://localhost 打开本地页面）');
-        return;
-      }
       if (listening) return;
-
-      recognition = new SR();
-      recognition.lang = 'zh-CN';
-      recognition.continuous = true;
-      recognition.interimResults = false;
-
       _bufferText = '';
-      if (_silenceTimer) { clearTimeout(_silenceTimer); _silenceTimer = null; }
-
+      _startRecognition(
+        (text) => {
+          _bufferText += text;
+          console.log('[voice] chunk:', text);
+        },
+        () => {
+          listening = false;
+          voiceBtn.textContent = '🎙(空格)';
+          voiceBtn.classList.remove('listening');
+          console.log('[voice] end, buffer:', _bufferText);
+          const roles = _pickRolesFromText(_bufferText);
+          if (roles && roles.length > 0) {
+            _applyOpenRoles(roles);
+          } else if (_bufferText) {
+            alert('未识别到角色名：「' + _bufferText + '」');
+          }
+          _bufferText = '';
+        }
+      );
       listening = true;
       voiceBtn.textContent = '🛑';
       voiceBtn.classList.add('listening');
-      console.log('[voice] start');
-
-      recognition.onresult = e => {
-        let chunk = '';
-        try {
-          for (let i = e.resultIndex; i < e.results.length; i++) {
-            const t = e.results[i] && e.results[i][0] ? e.results[i][0].transcript : '';
-            if (t) chunk += t;
-          }
-        } catch (_) {}
-        if (chunk) _bufferText += chunk;
-        console.log('[voice] result raw:', _bufferText);
-      };
-
-      recognition.onerror = (err) => {
-        const msg = err && err.error ? err.error : 'unknown';
-        console.warn('[voice] error:', err);
-        if (msg !== 'aborted') {
-          alert('语音识别失败：' + msg + '（请确认已允许麦克风权限，并使用 http://localhost 打开）');
-        }
-      };
-
-      recognition.onend = () => {
-        if (_silenceTimer) { clearTimeout(_silenceTimer); _silenceTimer = null; }
-        listening = false;
-        voiceBtn.textContent = '🎙(空格)';
-        voiceBtn.classList.remove('listening');
-        console.log('[voice] end, buffer:', _bufferText);
-
-        const roles = _pickRolesFromText(_bufferText);
-        if (roles && roles.length > 0) {
-          _applyOpenRoles(roles);
-        } else if (_bufferText) {
-          console.warn('[voice] 未匹配到角色，原始识别文字：', _bufferText);
-          alert('未识别到角色名\n原始识别：「' + _bufferText + '」\n请截图反馈以便补充别名');
-        } else {
-          console.warn('[voice] ASR 无任何输出');
-          alert('语音未识别到任何内容\n对于生僻字角色（如鹈鹕），建议直接用搜索框输入拼音首字母「th」');
-        }
-        _bufferText = '';
-      };
-
-      try {
-        recognition.start();
-      } catch (e) {
-        // 避免重复 start 抛错导致按钮卡住
-        listening = false;
-        voiceBtn.textContent = '🎙(空格)';
-        voiceBtn.classList.remove('listening');
-      }
     }
 
     function stopListening() {
-      if (listening && recognition) recognition.stop();
+      if (!listening) return;
+      _stopRecognition();
     }
 
     // ── 按钮点击：切换开始/停止 ──────────────────────────────
@@ -351,6 +391,109 @@ const Phase1 = (() => {
     container.appendChild(groupsWrap);
 
     _updateOpenRoleChips();
+  }
+
+  function _renderMyRole() {
+    const container = document.getElementById('my-role-container');
+    container.innerHTML = '';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'my-role-selector-wrap';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = '输入角色名或拼音首字母选择...';
+    input.className = 'my-role-input';
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'my-role-dropdown hidden';
+
+    const display = document.createElement('div');
+    display.className = 'my-role-display hidden';
+
+    // 过滤逻辑
+    const filterRoles = (q) => {
+      const query = q.trim().toLowerCase();
+      dropdown.innerHTML = '';
+      if (!query) {
+        dropdown.classList.add('hidden');
+        return;
+      }
+
+      const matched = ROLES.filter(r =>
+        r.name.includes(query) ||
+        (r.initials && r.initials.startsWith(query)) ||
+        (r.aliases && r.aliases.some(a => a.includes(query)))
+      );
+
+      if (matched.length > 0) {
+        matched.forEach(role => {
+          const item = document.createElement('div');
+          item.className = `my-role-item faction-${role.faction}`;
+          item.innerHTML = `
+            <span class="role-name">${role.name}</span>
+            <span class="faction-label">${FACTION_META[role.faction].label}</span>
+          `;
+          item.addEventListener('click', () => {
+            State.setMyRole(role.name);
+            _updateMyRoleDisplay(role.name);
+            input.value = '';
+            dropdown.classList.add('hidden');
+          });
+          dropdown.appendChild(item);
+        });
+        dropdown.classList.remove('hidden');
+      } else {
+        dropdown.classList.add('hidden');
+      }
+    };
+
+    input.addEventListener('input', (e) => filterRoles(e.target.value));
+    input.addEventListener('focus', (e) => filterRoles(e.target.value));
+
+    // 点击外部关闭下拉
+    document.addEventListener('click', (e) => {
+      if (!wrap.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+
+    wrap.appendChild(input);
+    wrap.appendChild(dropdown);
+    wrap.appendChild(display);
+    container.appendChild(wrap);
+
+    _updateMyRoleDisplay(State.get().myRole);
+  }
+
+  function _updateMyRoleDisplay(roleName) {
+    const display = document.querySelector('.my-role-display');
+    const input = document.querySelector('.my-role-input');
+    if (!display || !input) return;
+
+    if (roleName) {
+      const role = ROLES.find(r => r.name === roleName);
+      if (role) {
+        const meta = FACTION_META[role.faction];
+        display.innerHTML = `
+          <div class="selected-role-box faction-${role.faction}">
+            <span class="role-icon">${meta.icon}</span>
+            <span class="role-name">${roleName}</span>
+            <span class="faction-tag">${meta.label}</span>
+            <button class="role-clear-btn" title="清空选择">✕</button>
+          </div>
+        `;
+        display.querySelector('.role-clear-btn').addEventListener('click', () => {
+          State.setMyRole(null);
+          _updateMyRoleDisplay(null);
+        });
+        display.classList.remove('hidden');
+        input.classList.add('hidden');
+      }
+    } else {
+      display.classList.add('hidden');
+      input.classList.remove('hidden');
+    }
   }
 
   function _toggleOpenRole(roleName, faction, chip) {
