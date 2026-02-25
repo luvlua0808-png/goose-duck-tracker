@@ -47,6 +47,9 @@ const App = (() => {
       NAV_BTNS.meeting.disabled = false;
     }
 
+    // 切换阶段后让页面重新获焦，确保空格键事件能被捕获（线上 https 环境下焦点可能在地址栏）
+    document.body.focus();
+
     // 渲染对应阶段
     if (phase === 'init')    Phase1.render();
     if (phase === 'game')    Phase2.render();

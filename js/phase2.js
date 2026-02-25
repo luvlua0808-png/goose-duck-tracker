@@ -19,6 +19,11 @@ const Phase2 = (() => {
     _bindVoiceSighting();
 
     document.getElementById('btn-enter-meeting').addEventListener('click', () => {
+      if (window.AI && typeof window.AI.clearResult === 'function') {
+        window.AI.clearResult();
+      } else if (typeof AI !== 'undefined' && AI && typeof AI.clearResult === 'function') {
+        AI.clearResult();
+      }
       State.commitRound();
       App.switchPhase('meeting');
     });

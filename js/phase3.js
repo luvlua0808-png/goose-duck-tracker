@@ -13,6 +13,11 @@ const Phase3 = (() => {
 
   function init() {
     document.getElementById('btn-next-round').addEventListener('click', () => {
+      if (window.AI && typeof window.AI.clearResult === 'function') {
+        window.AI.clearResult();
+      } else if (typeof AI !== 'undefined' && AI && typeof AI.clearResult === 'function') {
+        AI.clearResult();
+      }
       State.nextRound();
       App.switchPhase('game');
     });

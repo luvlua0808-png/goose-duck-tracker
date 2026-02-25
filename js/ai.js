@@ -28,12 +28,25 @@ const AI = (() => {
 
   // ── 工具函数 ──────────────────────────────────────────────
 
+  let _activeAbortController = null;
+
   function getApiKey() {
     return localStorage.getItem(AI_KEY_STORAGE) || '';
   }
 
   function saveApiKey(key) {
     localStorage.setItem(AI_KEY_STORAGE, key.trim());
+  }
+
+  function clearResult() {
+    if (_activeAbortController) {
+      try { _activeAbortController.abort(); } catch (_) {}
+      _activeAbortController = null;
+    }
+    const panel = document.getElementById('ai-result-panel');
+    const body  = document.getElementById('ai-result-body');
+    if (body) body.innerHTML = '';
+    if (panel) panel.classList.add('hidden');
   }
 
   // ── 构建用户 Prompt ───────────────────────────────────────
@@ -146,6 +159,8 @@ const AI = (() => {
     const userPrompt = buildUserPrompt();
 
     let response;
+    const controller = new AbortController();
+    _activeAbortController = controller;
     try {
       response = await fetch(API_URL, {
         method: 'POST',
@@ -153,6 +168,7 @@ const AI = (() => {
           'Content-Type':  'application/json',
           'Authorization': `Bearer ${apiKey}`,
         },
+        signal: controller.signal,
         body: JSON.stringify({
           model: MODEL,
           messages: [
@@ -165,12 +181,14 @@ const AI = (() => {
         }),
       });
     } catch (e) {
+      if (e && e.name === 'AbortError') return;
       onError('network');
       return;
     }
 
     if (!response.ok) {
       const status = response.status;
+      _activeAbortController = null;
       if (status === 401) { onError('invalid_key'); return; }
       if (status === 402) { onError('no_balance'); return; }
       onError('api_error');
@@ -205,8 +223,11 @@ const AI = (() => {
           }
         }
       }
+      _activeAbortController = null;
       onDone();
     } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      _activeAbortController = null;
       onError('stream_error');
     }
   }
@@ -363,5 +384,5 @@ const AI = (() => {
     });
   }
 
-  return { init };
+  return { init, clearResult };
 })();
