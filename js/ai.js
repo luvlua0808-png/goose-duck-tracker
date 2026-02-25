@@ -304,6 +304,74 @@ const AI = (() => {
     }
   }
 
+  let _isPopout = false;
+  let _dragState = { isDragging: false, startX: 0, startY: 0, startLeft: 0, startTop: 0 };
+
+  // ── 更新AI面板中的阵营统计 ────────────────────────────────
+  function _updateAIFactionStats() {
+    const stats = State.getFactionStats();
+    document.getElementById('ai-faction-goose').textContent = stats.goose.total;
+    document.getElementById('ai-faction-duck').textContent = stats.duck.total;
+    document.getElementById('ai-faction-neutral').textContent = stats.neutral.total;
+  }
+
+  // ── 弹出/嵌入切换 ───────────────────────────────────────
+  function _togglePopout() {
+    const panel = document.getElementById('ai-result-panel');
+    const btnPopout = document.getElementById('btn-ai-popout');
+
+    if (!_isPopout) {
+      // 弹出
+      panel.classList.add('popout');
+      btnPopout.textContent = '⛶';
+      btnPopout.title = '嵌入页面';
+      _isPopout = true;
+    } else {
+      // 嵌入
+      panel.classList.remove('popout');
+      btnPopout.textContent = '⛶';
+      btnPopout.title = '弹出窗口';
+      _isPopout = false;
+    }
+  }
+
+  // ── 拖动功能 ────────────────────────────────────────────
+  function _initDrag() {
+    const panel = document.getElementById('ai-result-panel');
+    const header = panel.querySelector('.ai-result-header');
+
+    header.addEventListener('mousedown', (e) => {
+      if (!_isPopout) return;
+      if (e.target.closest('.ai-result-close') || e.target.closest('.ai-result-popout')) return;
+
+      _dragState.isDragging = true;
+      _dragState.startX = e.clientX;
+      _dragState.startY = e.clientY;
+      _dragState.startLeft = panel.offsetLeft;
+      _dragState.startTop = panel.offsetTop;
+
+      panel.classList.add('dragging');
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!_dragState.isDragging) return;
+
+      const dx = e.clientX - _dragState.startX;
+      const dy = e.clientY - _dragState.startY;
+
+      panel.style.left = `${_dragState.startLeft + dx}px`;
+      panel.style.top = `${_dragState.startTop + dy}px`;
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (_dragState.isDragging) {
+        _dragState.isDragging = false;
+        panel.classList.remove('dragging');
+      }
+    });
+  }
+
   // ── UI：显示结果 ──────────────────────────────────────────
 
   function _showLoading() {
@@ -311,6 +379,7 @@ const AI = (() => {
     const body  = document.getElementById('ai-result-body');
     panel.classList.remove('hidden');
     body.innerHTML = '<div class="ai-loading"><span class="ai-spinner"></span> AI 正在分析中…</div>';
+    _updateAIFactionStats();
   }
 
   function _showError(type) {
@@ -486,6 +555,12 @@ const AI = (() => {
     document.getElementById('btn-ai-close').addEventListener('click', () => {
       document.getElementById('ai-result-panel').classList.add('hidden');
     });
+
+    // 弹出/嵌入切换
+    document.getElementById('btn-ai-popout').addEventListener('click', _togglePopout);
+
+    // 初始化拖动
+    _initDrag();
   }
 
   return { init, clearResult, getAliyunConfig, saveAliyunConfig };

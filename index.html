@@ -181,7 +181,28 @@
           <div id="ai-result-panel" class="ai-result-panel hidden">
             <div class="ai-result-header">
               <span class="ai-result-title">🧠 AI 分析</span>
-              <button class="ai-result-close" id="btn-ai-close" type="button">✕</button>
+              <div class="ai-result-actions">
+                <button class="ai-result-popout" id="btn-ai-popout" type="button" title="弹出窗口">⛶</button>
+                <button class="ai-result-close" id="btn-ai-close" type="button">✕</button>
+              </div>
+            </div>
+            <!-- 阵营统计置顶区域 -->
+            <div id="ai-faction-stats" class="ai-faction-stats">
+              <div class="ai-faction-item">
+                <span class="ai-faction-icon">🪿</span>
+                <span class="ai-faction-name">鹅</span>
+                <span id="ai-faction-goose" class="ai-faction-count">-</span>
+              </div>
+              <div class="ai-faction-item">
+                <span class="ai-faction-icon">🦆</span>
+                <span class="ai-faction-name">鸭</span>
+                <span id="ai-faction-duck" class="ai-faction-count">-</span>
+              </div>
+              <div class="ai-faction-item">
+                <span class="ai-faction-icon">🕊️</span>
+                <span class="ai-faction-name">中立</span>
+                <span id="ai-faction-neutral" class="ai-faction-count">-</span>
+              </div>
             </div>
             <div id="ai-result-body" class="ai-result-body">
               <!-- 内容由 JS 渲染 -->

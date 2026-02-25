@@ -712,29 +712,116 @@ body {
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: 0 0 20px rgba(124,58,237,0.15);
+  display: flex;
+  flex-direction: column;
 }
+
+/* 弹出模式样式 */
+.ai-result-panel.popout {
+  position: fixed;
+  top: 100px;
+  left: 100px;
+  width: 480px;
+  max-height: 80vh;
+  z-index: 300;
+  margin-top: 0;
+  resize: both;
+  overflow: auto;
+}
+
+.ai-result-panel.dragging {
+  opacity: 0.9;
+  box-shadow: 0 8px 32px rgba(124,58,237,0.4);
+}
+
 .ai-result-header {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 10px 14px;
   background: rgba(124,58,237,0.18);
   border-bottom: 1px solid #4a2a7a;
+  cursor: default;
 }
+
+.ai-result-panel.popout .ai-result-header {
+  cursor: move;
+}
+
 .ai-result-title {
   font-weight: 700; font-size: 0.88rem;
   color: #c4b5fd; letter-spacing: 0.03em;
 }
+
+.ai-result-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.ai-result-popout,
 .ai-result-close {
   background: none; border: none; cursor: pointer;
   color: var(--text-muted); font-size: 0.85rem; padding: 2px 6px;
   border-radius: var(--radius-sm); transition: color var(--transition);
   font-family: inherit;
 }
+
+.ai-result-popout:hover,
 .ai-result-close:hover { color: var(--text-primary); }
+
+.ai-result-popout {
+  font-size: 0.9rem;
+}
+
+/* 阵营统计置顶区域 */
+.ai-faction-stats {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(0,0,0,0.2);
+  border-bottom: 1px solid rgba(74,42,122,0.3);
+}
+
+.ai-faction-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(124,58,237,0.08);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(74,42,122,0.3);
+}
+
+.ai-faction-icon {
+  font-size: 0.9rem;
+}
+
+.ai-faction-name {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.ai-faction-count {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #c4b5fd;
+  min-width: 16px;
+  text-align: center;
+}
+
 .ai-result-body {
   padding: 14px 14px 10px;
-  max-height: 380px; overflow-y: auto;
+  max-height: 300px;
+  overflow-y: auto;
   font-size: 0.83rem; line-height: 1.75; color: var(--text-primary);
 }
+
+.ai-result-panel.popout .ai-result-body {
+  max-height: none;
+  flex: 1;
+}
+
 .ai-result-footer {
   padding: 8px 14px;
   font-size: 0.72rem; color: var(--text-muted);
