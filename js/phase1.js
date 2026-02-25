@@ -295,7 +295,7 @@ const Phase1 = (() => {
     // ── 空格键：按住开始，松开停止 ───────────────────────────
     // 只在初始化阶段（phase-init 可见）且焦点不在输入框时响应
     document.addEventListener('keydown', e => {
-      if (e.code !== 'Space') return;
+      if (e.code !== 'Space' && e.key !== ' ') return;
       const initSection = document.getElementById('phase-init');
       if (!initSection || !initSection.classList.contains('active')) return;
       const tag = document.activeElement && document.activeElement.tagName;
@@ -306,7 +306,7 @@ const Phase1 = (() => {
     });
 
     document.addEventListener('keyup', e => {
-      if (e.code !== 'Space') return;
+      if (e.code !== 'Space' && e.key !== ' ') return;
       const initSection = document.getElementById('phase-init');
       if (!initSection || !initSection.classList.contains('active')) return;
       stopListening();

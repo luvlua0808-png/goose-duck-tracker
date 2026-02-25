@@ -415,6 +415,10 @@ const AI = (() => {
     }
   }
 
+  function _closeSettings() {
+    document.getElementById('modal-ai-settings').classList.add('hidden');
+  }
+
   function init() {
     // ... 保持原有 AI 设置按钮逻辑 ...
     document.getElementById('btn-ai-settings').addEventListener('click', _openSettings);
@@ -484,5 +488,5 @@ const AI = (() => {
     });
   }
 
-  return { init, clearResult };
+  return { init, clearResult, getAliyunConfig, saveAliyunConfig };
 })();

@@ -272,6 +272,8 @@ const Phase2 = (() => {
 
     document.addEventListener('keyup', e => {
       if (e.code !== 'Space') return;
+      const gameSection = document.getElementById('phase-game');
+      if (!gameSection || !gameSection.classList.contains('active')) return;
       stopListening();
     });
   }
