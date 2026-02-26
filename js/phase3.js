@@ -11,6 +11,19 @@ const Phase3 = (() => {
     confirmed_duck: '确认是鸭',
   };
 
+  // 拖拽状态
+  let _dragState = {
+    isDragging: false,
+    fromPlayer: null,
+    fromColor: null,
+    fromPos: null,
+    previewLine: null,
+    selectedLine: null,
+  };
+
+  // 色点坐标缓存 { playerNum: {x, y} }
+  let _dotPositions = {};
+
   function init() {
     document.getElementById('btn-next-round').addEventListener('click', () => {
       if (window.AI && typeof window.AI.clearResult === 'function') {
@@ -21,11 +34,25 @@ const Phase3 = (() => {
       State.nextRound();
       App.switchPhase('game');
     });
+
+    // 初始化拖拽连线事件
+    _initGroupDragEvents();
+
+    // resize/scroll 时重新计算坐标并刷新连线
+    window.addEventListener('resize', () => {
+      _updateDotPositions();
+      _renderGroupLines();
+    });
+    window.addEventListener('scroll', () => {
+      _updateDotPositions();
+      _renderGroupLines();
+    }, true);
   }
 
   function render() {
     _renderPlayerCards();
     _renderFactionStats();
+    _renderGroupLines();
   }
 
   // ── 玩家卡片 ──────────────────────────────────────────────
@@ -70,12 +97,19 @@ const Phase3 = (() => {
     }
 
     const card = document.createElement('div');
+    card.id = `player-${num}`;
     card.className = 'player-card' +
       (p.alive ? ' alive' : ' dead') +
       (p.faction ? ` faction-${p.faction}` : '') +
       (isDuplicate ? ' duplicate-role' : '') +
       (isFactionExceeded ? ' faction-exceeded-card' : '');
     card.dataset.player = num;
+
+    // 玩家颜色小点
+    const colorDot = document.createElement('div');
+    colorDot.className = 'player-color-dot dot';
+    colorDot.style.backgroundColor = PLAYER_COLORS[num] || '#888';
+    card.appendChild(colorDot);
 
     // ── 行1：编号 + 存活 + 可信度 ──
     const header = document.createElement('div');
@@ -386,6 +420,180 @@ const Phase3 = (() => {
     }
     row.appendChild(tags);
     return row;
+  }
+
+  // ── 抱团拖拽连线功能 ────────────────────────────────────────
+
+  // 更新所有色点坐标缓存（使用色点圆心，转换为 wrapper 相对坐标）
+  function _updateDotPositions() {
+    const wrapper = document.querySelector('.player-cards-wrapper');
+    if (!wrapper) return;
+    const wrapperRect = wrapper.getBoundingClientRect();
+    _dotPositions = {};
+    document.querySelectorAll('.player-card[data-player]').forEach(card => {
+      const num = parseInt(card.dataset.player);
+      const dot = document.querySelector(`#player-${num} .dot`);
+      if (!dot) return;
+      const rect = dot.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2 + window.scrollX;
+      const cy = rect.top + rect.height / 2 + window.scrollY;
+      const wx = wrapperRect.left + window.scrollX;
+      const wy = wrapperRect.top + window.scrollY;
+      _dotPositions[num] = {
+        x: cx - wx,
+        y: cy - wy,
+      };
+    });
+  }
+
+  function _initGroupDragEvents() {
+    const grid = document.getElementById('player-cards-grid');
+    const svg = document.getElementById('group-lines-svg');
+    const wrapper = document.querySelector('.player-cards-wrapper');
+
+    // 从色点开始拖拽（色点有 pointer-events: auto）
+    grid.addEventListener('mousedown', (e) => {
+      const dot = e.target.closest('.player-color-dot');
+      if (!dot) return;
+
+      const card = dot.closest('.player-card');
+      if (!card) return;
+      const fromPlayer = parseInt(card.dataset.player);
+      if (!fromPlayer) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      _updateDotPositions();
+      const fromPos = _dotPositions[fromPlayer];
+      if (!fromPos) return;
+
+      _dragState.isDragging = true;
+      _dragState.fromPlayer = fromPlayer;
+      _dragState.fromColor = PLAYER_COLORS[fromPlayer] || '#888';
+      _dragState.fromPos = fromPos;
+
+      // 创建预览线（贝塞尔曲线 path）
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      line.classList.add('group-line-preview');
+      line.setAttribute('stroke', _dragState.fromColor);
+      line.setAttribute('d', `M ${fromPos.x} ${fromPos.y} C ${fromPos.x} ${fromPos.y}, ${fromPos.x} ${fromPos.y}, ${fromPos.x} ${fromPos.y}`);
+
+      svg.appendChild(line);
+      _dragState.previewLine = line;
+    });
+
+    // 鼠标移动 - 更新预览线
+    document.addEventListener('mousemove', (e) => {
+      if (!_dragState.isDragging || !_dragState.previewLine) return;
+
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const x = e.clientX - wrapperRect.left;
+      const y = e.clientY - wrapperRect.top;
+
+      const fp = _dragState.fromPos;
+      if (fp) {
+        const dx = Math.abs(x - fp.x) * 0.3;
+        const d = `M ${fp.x} ${fp.y} C ${fp.x + dx} ${fp.y} ${x - dx} ${y} ${x} ${y}`;
+        _dragState.previewLine.setAttribute('d', d);
+      }
+    });
+
+    // 鼠标松开 - 完成或取消连接
+    document.addEventListener('mouseup', (e) => {
+      if (!_dragState.isDragging) return;
+
+      const card = e.target.closest('.player-card');
+      const toPlayer = card ? parseInt(card.dataset.player) : null;
+
+      // 移除预览线
+      if (_dragState.previewLine) {
+        _dragState.previewLine.remove();
+        _dragState.previewLine = null;
+      }
+
+      // 如果松开在有效目标上且不是同一个玩家，创建连接
+      if (toPlayer && toPlayer !== _dragState.fromPlayer) {
+        const success = State.addGroupLink(_dragState.fromPlayer, toPlayer);
+        if (success) {
+          _renderGroupLines();
+        }
+      }
+
+      _dragState.isDragging = false;
+      _dragState.fromPlayer = null;
+      _dragState.fromColor = null;
+      _dragState.fromPos = null;
+    });
+
+    // 连线点击选择（path 元素有 pointer-events: stroke，可以接收事件）
+    svg.addEventListener('click', (e) => {
+      if (e.target.classList.contains('group-line')) {
+        svg.querySelectorAll('.group-line').forEach(l => l.classList.remove('selected'));
+        e.target.classList.add('selected');
+        _dragState.selectedLine = e.target;
+      } else {
+        svg.querySelectorAll('.group-line').forEach(l => l.classList.remove('selected'));
+        _dragState.selectedLine = null;
+      }
+    });
+
+    // 双击删除连线
+    svg.addEventListener('dblclick', (e) => {
+      if (e.target.classList.contains('group-line')) {
+        const from = parseInt(e.target.dataset.from);
+        const to = parseInt(e.target.dataset.to);
+        State.removeGroupLink(from, to);
+        _renderGroupLines();
+        _dragState.selectedLine = null;
+      }
+    });
+  }
+
+  // 获取玩家色点的位置（优先从缓存读取）
+  function _getDotPosition(playerNum) {
+    if (_dotPositions[playerNum]) return _dotPositions[playerNum];
+    // 缓存未命中时实时计算
+    const card = document.querySelector(`.player-card[data-player="${playerNum}"]`);
+    if (!card) return { x: 0, y: 0 };
+    const wrapper = document.querySelector('.player-cards-wrapper');
+    if (!wrapper) return { x: 0, y: 0 };
+    const cardRect = card.getBoundingClientRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
+    return {
+      x: cardRect.right - wrapperRect.left,
+      y: cardRect.top - wrapperRect.top + cardRect.height / 2,
+    };
+  }
+
+  // 渲染所有抱团连线
+  function _renderGroupLines() {
+    const svg = document.getElementById('group-lines-svg');
+    svg.innerHTML = '';
+
+    _updateDotPositions();
+    const links = State.getGroupLinks();
+
+    links.forEach(link => {
+      const fromPos = _getDotPosition(link.from);
+      const toPos = _getDotPosition(link.to);
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.classList.add('group-line');
+      path.dataset.from = link.from;
+      path.dataset.to = link.to;
+
+      // 线条颜色使用起点的玩家颜色
+      const color = PLAYER_COLORS[link.from] || '#888';
+      path.setAttribute('stroke', color);
+
+      // 贝塞尔曲线：控制点水平偏移
+      const dx = Math.abs(toPos.x - fromPos.x) * 0.3;
+      const d = `M ${fromPos.x} ${fromPos.y} C ${fromPos.x + dx} ${fromPos.y} ${toPos.x - dx} ${toPos.y} ${toPos.x} ${toPos.y}`;
+      path.setAttribute('d', d);
+
+      svg.appendChild(path);
+    });
   }
 
   return { init, render };

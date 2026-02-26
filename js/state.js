@@ -16,10 +16,11 @@ function createDefaultState() {
       factions: { goose: 8, duck: 3, neutral: 2 },
       openRoles: [],         // 明牌角色名数组
     },
-    rounds: {},              // { 1: { path: [], sightings: { roomId: [playerNums] } }, ... }
+    rounds: {},              // { 1: { path: [], sightings: { roomId: [playerNums] }, groups: [{from, to}] }, ... }
     players: {},             // { 1: { alive, trust, faction, role, notes: { roundN: '' } } }
     currentPath: [],         // 当前轮次路径 roomId 数组
     currentSightings: {},    // 当前轮次目击 { roomId: [nums] }
+    currentGroups: [],       // 当前轮次抱团关系 [{ from: 1, to: 2 }, ...]
   };
 }
 
@@ -144,6 +145,7 @@ const State = {
     gameState.rounds[r] = {
       path: [...gameState.currentPath],
       sightings: { ...gameState.currentSightings },
+      groups: [...gameState.currentGroups],
     };
     gameState.currentPath = [];
     gameState.currentSightings = {};
@@ -156,6 +158,7 @@ const State = {
     gameState.round += 1;
     gameState.currentPath = [];
     gameState.currentSightings = {};
+    gameState.currentGroups = [];
     gameState.phase = 'game';
     saveState();
   },
@@ -268,6 +271,36 @@ const State = {
       p.trust = trustLevel;
       saveState();
     }
+  },
+
+  // 抱团关系操作
+  addGroupLink(from, to) {
+    // 避免重复和反向重复
+    const exists = gameState.currentGroups.some(
+      g => (g.from === from && g.to === to) || (g.from === to && g.to === from)
+    );
+    if (!exists) {
+      gameState.currentGroups.push({ from, to });
+      saveState();
+      return true;
+    }
+    return false;
+  },
+
+  removeGroupLink(from, to) {
+    const idx = gameState.currentGroups.findIndex(
+      g => (g.from === from && g.to === to) || (g.from === to && g.to === from)
+    );
+    if (idx >= 0) {
+      gameState.currentGroups.splice(idx, 1);
+      saveState();
+      return true;
+    }
+    return false;
+  },
+
+  getGroupLinks() {
+    return [...gameState.currentGroups];
   },
 
   reset() {

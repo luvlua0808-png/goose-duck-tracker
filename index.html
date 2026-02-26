@@ -53,6 +53,8 @@
             <div class="map-selector">
               <button class="map-btn active" data-map="spaceship" id="map-spaceship">🚀 老妈鹅飞船</button>
               <button class="map-btn" data-map="church" id="map-church">⛪ 鹅教堂</button>
+              <button class="map-btn" data-map="basement" id="map-basement">🔮 地下室</button>
+              <button class="map-btn" data-map="jungle" id="map-jungle">🌿 丛林殿堂</button>
             </div>
           </div>
 
@@ -157,7 +159,7 @@
       <div class="meeting-layout">
 
         <!-- 左侧：玩家卡片网格 -->
-        <div class="players-panel">
+        <div class="players-panel" id="players-panel">
           <div class="players-header">
             <h3>玩家信息</h3>
             <div class="meeting-actions">
@@ -165,8 +167,10 @@
               <button class="btn btn-sm btn-secondary" id="btn-next-round">下一轮 →</button>
             </div>
           </div>
-          <div id="player-cards-grid" class="player-cards-grid">
-            <!-- 由 JS 渲染 -->
+          <div class="player-cards-wrapper">
+            <!-- SVG 连线画布层 -->
+            <svg id="group-lines-svg" class="group-lines-svg"></svg>
+            <div id="player-cards-grid" class="player-cards-grid"></div>
           </div>
         </div>
 

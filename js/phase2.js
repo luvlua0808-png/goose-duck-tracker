@@ -296,11 +296,13 @@ const Phase2 = (() => {
     const nodesEl   = document.getElementById('map-nodes');
     const { currentPath, currentSightings } = State.get();
 
-    // 设置容器尺寸
+    // 设置容器尺寸 & 地图主题 class
     const W = mapDef.width + 40;
     const H = mapDef.height + 40;
     wrapper.style.minWidth  = W + 'px';
     wrapper.style.minHeight = H + 'px';
+    wrapper.className = wrapper.className.replace(/\bmap-theme-\S+/g, '').trim();
+    wrapper.classList.add(`map-theme-${mapDef.id}`);
     svgEl.setAttribute('width',  W);
     svgEl.setAttribute('height', H);
     svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -343,8 +345,43 @@ const Phase2 = (() => {
         (hasSighting ? ' has-sighting' : '');
       el.style.left = (node.x + OFFSET) + 'px';
       el.style.top  = (node.y + OFFSET) + 'px';
-      el.textContent = node.label;
       el.dataset.id  = node.id;
+
+      const labelEl = document.createElement('span');
+      labelEl.className = 'node-label-text';
+      labelEl.textContent = node.label;
+      el.appendChild(labelEl);
+
+      // 目击玩家色点
+      const sightedNums = currentSightings[node.id] || [];
+      if (sightedNums.length > 0) {
+        const { players } = State.get();
+        const dotsEl = document.createElement('div');
+        dotsEl.className = 'node-sighting-dots';
+        sightedNums.forEach(num => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'node-player-dot-wrapper';
+          const dot = document.createElement('div');
+          dot.className = 'node-player-dot';
+          const color = PLAYER_COLORS[num] || '#888';
+          dot.style.borderColor = color;
+          dot.style.color = color;
+          dot.textContent = num;
+          const isDead = players[num] && players[num].alive === false;
+          if (isDead) {
+            dot.style.opacity = '0.5';
+            const skull = document.createElement('span');
+            skull.className = 'node-player-dead-icon';
+            skull.textContent = '🍗';
+            wrapper.appendChild(dot);
+            wrapper.appendChild(skull);
+          } else {
+            wrapper.appendChild(dot);
+          }
+          dotsEl.appendChild(wrapper);
+        });
+        el.appendChild(dotsEl);
+      }
 
       // 顺序徽章
       if (isSelected && orderIdx >= 0) {
