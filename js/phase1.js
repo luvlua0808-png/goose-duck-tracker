@@ -529,6 +529,7 @@ const Phase1 = (() => {
         return;
       }
       State.startGame();
+      if (typeof umami !== 'undefined') umami.track('game_start', { map: config.map, playerCount: config.playerCount });
       App.switchPhase('game');
     });
   }

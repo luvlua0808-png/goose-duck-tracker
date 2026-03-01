@@ -38,7 +38,7 @@ html { font-size: 14px; }
 body {
   font-family: 'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC',sans-serif;
   background: var(--bg-base); color: var(--text-primary);
-  min-width: 1200px; min-height: 100vh; line-height: 1.5;
+  min-width: 0; min-height: 100vh; line-height: 1.5;
 }
 .hidden { display: none !important; }
 
@@ -340,6 +340,7 @@ body {
 .map-wrapper {
   flex: 1; position: relative; overflow: auto;
   background: radial-gradient(ellipse at center, #111827 0%, #0d1117 100%);
+  -webkit-overflow-scrolling: touch;
 }
 .map-theme-basement {
   background: radial-gradient(ellipse at center, #1a0a2e 0%, #0d0718 100%);
@@ -365,6 +366,7 @@ body {
 .map-theme-jungle .map-node.has-sighting { border-color: #d29922; }
 .map-theme-jungle .map-edge { stroke: #4a5a20; }
 .map-theme-jungle .map-edge-path { stroke: #8aaa30; }
+.map-canvas { position: relative; flex-shrink: 0; }
 .map-svg { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1; }
 .map-nodes { position: relative; z-index: 2; }
 .map-node {
@@ -375,6 +377,7 @@ body {
   cursor: pointer; transition: all var(--transition);
   user-select: none; z-index: 2; text-align: center; min-width: 64px;
   display: flex; flex-direction: column; align-items: center; gap: 0;
+  -webkit-tap-highlight-color: rgba(88,166,255,0.2);
 }
 .map-node:hover {
   background: var(--bg-hover); border-color: var(--accent-blue); color: var(--text-primary);
@@ -1009,4 +1012,425 @@ body {
 .ai-error-msg {
   color: var(--text-secondary); font-size: 0.83rem; line-height: 1.7;
   padding: 4px 0;
+}
+
+/* ============================================================
+   竖屏旋转提示蒙层
+   ============================================================ */
+.rotate-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #0d1117;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+/* 手机竖屏时显示蒙层 */
+@media (max-width: 960px) and (orientation: portrait) {
+  .rotate-overlay {
+    display: flex;
+  }
+}
+
+.rotate-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-primary);
+}
+
+.rotate-icon {
+  font-size: 4rem;
+  animation: rotate-phone 2s ease-in-out infinite;
+}
+
+.rotate-arrow {
+  font-size: 3rem;
+  color: var(--accent-blue);
+  animation: rotate-spin 2s ease-in-out infinite;
+}
+
+@keyframes rotate-phone {
+  0%, 40%  { transform: rotate(0deg); }
+  60%, 100% { transform: rotate(90deg); }
+}
+
+@keyframes rotate-spin {
+  0%   { opacity: 0.3; transform: rotate(-30deg) scale(0.9); }
+  50%  { opacity: 1;   transform: rotate(30deg)  scale(1.1); }
+  100% { opacity: 0.3; transform: rotate(-30deg) scale(0.9); }
+}
+
+.rotate-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.rotate-desc {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   手机横屏适配 — 仅在 max-width:960px + orientation:landscape 生效
+   桌面端完全不受影响
+   ============================================================ */
+
+/* Tab / 抽屉 组件：桌面端永远隐藏 */
+.mobile-meeting-tabs { display: none; }
+.mobile-stats-panel  { display: none; }
+.mobile-ai-panel     { display: none; }
+.drawer-toggle       { display: none; }
+.drawer-body         { display: contents; }
+
+/* 手机角色选择 Modal — 全平台样式（默认hidden） */
+.mobile-role-modal {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+}
+.mobile-role-modal.hidden { display: none !important; }
+.mobile-role-modal-box {
+  background: var(--bg-elevated); border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg); padding: 14px 16px;
+  width: min(90vw, 360px); max-height: 70vh;
+  display: flex; flex-direction: column; gap: 10px;
+  box-shadow: var(--shadow-lg);
+}
+.mobile-role-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.mobile-role-modal-header span { font-size: 0.95rem; font-weight: 600; }
+.mobile-role-modal-header button {
+  background: none; border: none; color: var(--text-secondary);
+  font-size: 1rem; cursor: pointer; padding: 2px 6px;
+}
+#mobile-role-search {
+  width: 100%; background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-primary);
+  font-size: 0.9rem; padding: 6px 10px; font-family: inherit;
+}
+#mobile-role-search:focus { outline: none; border-color: var(--accent-blue); }
+.mobile-role-list {
+  overflow-y: auto; display: flex; flex-direction: column; gap: 2px;
+}
+.mobile-role-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; border-radius: var(--radius-sm); cursor: pointer;
+  font-size: 0.88rem;
+}
+.mobile-role-item:hover, .mobile-role-item:active { background: var(--bg-hover); }
+
+@media (max-width: 960px) and (orientation: landscape) {
+
+  /* ── 全局 ── */
+  html { font-size: 13px; }
+
+  /* ── 导航栏压缩 ── */
+  #app-header  { height: 40px; padding: 0 10px; gap: 6px; }
+  #app-main    { height: calc(100dvh - 40px); }
+  .app-title   { font-size: 0.88rem; }
+  .round-badge { font-size: 0.75rem; padding: 1px 7px; }
+  .phase-nav   { padding: 2px; gap: 2px; }
+  .nav-btn     { padding: 3px 10px; font-size: 0.78rem; }
+  .header-right { gap: 4px; }
+  #btn-reset-round { display: none !important; }
+  #btn-ai-settings { font-size: 0.7rem; padding: 2px 6px; }
+  #btn-end-game    { font-size: 0.7rem; padding: 2px 6px; }
+
+  /* ── 阶段一：初始化 ── */
+  .init-left  { width: 230px; padding: 6px 10px; gap: 4px; }
+  .init-right { padding: 6px 10px; gap: 6px; }
+  .section-title { font-size: 0.75rem; padding-bottom: 4px; }
+  .config-label  { font-size: 0.62rem; }
+  .config-block  { gap: 4px; }
+  .stepper-btn   { width: 26px; height: 26px; font-size: 0.88rem; }
+  .stepper-value { font-size: 0.88rem; line-height: 26px; min-width: 38px; padding: 0 6px; }
+  .map-selector  { flex-wrap: wrap; gap: 4px; }
+  .map-btn       { flex: 1 1 calc(50% - 4px); padding: 4px 6px; font-size: 0.7rem; }
+  .faction-inputs { gap: 5px; }
+  .faction-input-group { padding: 3px 6px; gap: 4px; }
+  .faction-input-group label { font-size: 0.72rem; }
+  .faction-num   { width: 38px; font-size: 0.8rem; padding: 1px 3px; }
+  .faction-total { font-size: 0.68rem; }
+  .my-role-input { font-size: 0.78rem; padding: 4px 8px; }
+  .btn-large     { padding: 5px 16px; font-size: 0.82rem; margin-top: 4px; }
+  .open-roles-search { width: 160px; font-size: 0.72rem; padding: 3px 7px; }
+  .role-chip { padding: 2px 7px; font-size: 0.7rem; }
+  .role-faction-label { font-size: 0.75rem; }
+  .role-letter-row { min-height: 22px; }
+  .open-roles-groups { gap: 7px; }
+
+  /* ── 阶段二：地图 ── */
+  /* 地图占满全宽，侧栏变底部抽屉 */
+  .game-layout {
+    flex-direction: column;
+    position: relative;
+  }
+  .map-panel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .map-header { padding: 4px 10px; }
+  .map-title  { font-size: 0.85rem; }
+  .map-header-actions { gap: 4px; }
+  .map-header-actions .btn { font-size: 0.7rem; padding: 2px 8px; }
+
+  /* 地图画布：用原生滚动，不需要JS干预 */
+  .map-wrapper {
+    flex: 1;
+    overflow: scroll;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+  }
+  /* 节点保持绝对定位，touch-action继承确保可点击 */
+  .map-node {
+    padding: 8px 12px;
+    min-width: 52px;
+    font-size: 0.78rem;
+    touch-action: manipulation;
+  }
+
+  .path-summary-box { padding: 3px 10px; }
+  .path-summary-text  { font-size: 0.75rem; }
+  .path-summary-label { font-size: 0.75rem; white-space: nowrap; }
+
+  /* 底部抽屉 */
+  .game-side-panel {
+    width: 100%;
+    flex-shrink: 0;
+    position: relative;
+    border-top: 1px solid var(--border);
+    background: var(--bg-surface);
+  }
+  .drawer-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 5px 12px;
+    background: var(--bg-elevated);
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    cursor: pointer;
+    font-family: inherit;
+    border-bottom: 1px solid var(--border);
+  }
+  .drawer-toggle.open { color: var(--accent-blue); }
+  /* 抽屉内容：默认折叠，open时展开 */
+  .drawer-body {
+    display: none;
+    flex-direction: row;
+    max-height: 45dvh;
+    overflow: hidden;
+  }
+  .drawer-body.open {
+    display: flex;
+  }
+  .side-block {
+    flex: 1;
+    padding: 6px 10px;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+  }
+  .side-block:last-of-type { border-right: none; }
+  .side-block h4   { font-size: 0.72rem; margin-bottom: 4px; }
+  .hint-text       { font-size: 0.72rem; }
+  .sighting-item   { padding: 4px 7px; }
+  .sighting-room   { font-size: 0.72rem; }
+  .sighting-nums   { font-size: 0.68rem; }
+  .history-item    { font-size: 0.72rem; padding: 3px 6px; }
+  .game-actions    { padding: 6px 10px; flex-shrink: 0; align-self: flex-end; }
+  .game-actions .btn { font-size: 0.82rem; padding: 5px 14px; }
+
+  /* ── 阶段三：会议 ── */
+  /* 整体布局：players-panel占满，stats-panel隐藏（改用Tab） */
+  .meeting-layout { position: relative; }
+  .stats-panel    { display: none !important; }
+  .players-panel  { overflow: visible; }
+
+  .players-header {
+    padding: 4px 8px;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+  .players-header h3 { font-size: 0.82rem; white-space: nowrap; }
+  .meeting-actions   { gap: 4px; }
+  .meeting-actions .btn { font-size: 0.68rem; padding: 2px 7px; }
+  #btn-ai-analyze    { display: none !important; }
+
+  /* Mobile Tab 独立一行 */
+  .mobile-meeting-tabs {
+    display: flex;
+    flex-shrink: 0;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-surface);
+    padding: 0 8px;
+  }
+  .mobile-tab {
+    flex: 1;
+    padding: 6px 4px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    text-align: center;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .mobile-tab.active {
+    color: var(--accent-blue);
+    border-bottom-color: var(--accent-blue);
+  }
+
+  /* 手机内嵌阵营统计面板：占满 player-cards-wrapper 同样的位置，不覆盖 header */
+  .mobile-stats-panel {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    background: var(--bg-base);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .mobile-stats-panel.hidden { display: none !important; }
+
+  /* 阵营统计内容：三列横排 */
+  .mobile-stats-panel .faction-stats {
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    align-items: start;
+  }
+  .mobile-stats-panel .faction-stat-block { border-radius: var(--radius-sm); display: flex; flex-direction: column; }
+  .mobile-stats-panel .faction-stat-header { padding: 5px 8px; font-size: 0.78rem; }
+  .mobile-stats-panel .faction-stat-count  { font-size: 0.95rem; }
+  .mobile-stats-panel .faction-stat-body   { padding: 5px 8px; gap: 5px; flex: 1; }
+  .mobile-stats-panel .stat-row            { gap: 3px; }
+  .mobile-stats-panel .stat-row-label      { font-size: 0.65rem; }
+  .mobile-stats-panel .stat-tags           { gap: 3px; flex-wrap: wrap; }
+  .mobile-stats-panel .stat-tag            { font-size: 0.72rem; padding: 2px 7px; }
+  .mobile-stats-panel .stat-empty          { font-size: 0.68rem; }
+
+  /* 玩家卡片：5行3列 */
+  .group-lines-svg { display: none; }
+  .player-cards-grid {
+    padding: 4px 6px; gap: 4px;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+  }
+  .player-card {
+    padding: 3px 5px; gap: 0; overflow: hidden; position: relative;
+    display: flex; flex-direction: column;
+  }
+
+  /* +角色 按钮 */
+  .role-pick-btn {
+    flex-shrink: 0;
+    padding: 1px 5px; border-radius: 8px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-elevated); color: var(--text-secondary);
+    font-size: 0.65rem; cursor: pointer; font-family: inherit;
+    line-height: 1.4;
+  }
+  .role-pick-btn:active { background: var(--bg-hover); }
+
+  /* 行2备注点击区（纯展示，点击弹modal） */
+  .card-notes-tap {
+    flex: 1; min-width: 0;
+    background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius-sm); color: var(--text-secondary);
+    font-size: 0.58rem; padding: 1px 5px;
+    line-height: 18px; height: 18px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    cursor: pointer; user-select: none;
+  }
+  .card-notes-tap:active { background: rgba(255,255,255,0.08); }
+  /* 行高固定，键盘弹出不影响卡片布局 */
+  .card-header {
+    height: 20px; flex-shrink: 0;
+    gap: 2px; flex-wrap: nowrap; align-items: center; overflow: hidden;
+  }
+  .card-num    { font-size: 0.95rem; min-width: 18px; line-height: 1; flex-shrink: 0; }
+  .alive-btn   { font-size: 0.56rem; padding: 1px 4px; border-radius: 8px; flex-shrink: 0; line-height: 1; }
+  .trust-btn   { font-size: 0.56rem; padding: 1px 4px; border-radius: 8px; margin-left: auto; flex-shrink: 0; line-height: 1; }
+  .card-role-tag { font-size: 0.56rem; padding: 1px 4px; border-radius: 8px; max-width: 46px; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card-row2 {
+    height: 20px; flex-shrink: 0;
+    padding-top: 2px; gap: 2px; align-items: center; flex-wrap: nowrap; overflow: hidden;
+  }
+  .faction-btns { gap: 2px; display: flex; align-items: center; flex-shrink: 0; }
+  .faction-btn  { font-size: 0.72rem; line-height: 1; display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; padding: 0; }
+  .card-row3 {
+    flex: 1; min-height: 0;
+    padding-top: 2px; gap: 2px; overflow: hidden;
+  }
+  .card-sightings { font-size: 0.6rem; overflow: hidden; }
+  .card-section-label { font-size: 0.54rem; margin-bottom: 0; }
+  .sighting-round { font-size: 0.58rem; }
+  .sighting-entry { font-size: 0.6rem; line-height: 1.2; }
+  .sighting-entry span:last-child { font-size: 0.6rem; }
+
+  /* ── 弹窗 ── */
+  .modal-box { padding: 10px 12px; min-width: 0; width: 90vw; max-width: 420px; gap: 6px;
+    max-height: 85dvh; overflow-y: auto; }
+  .modal-box h3 { font-size: 0.88rem; }
+  .modal-box p  { font-size: 0.78rem; }
+  /* AI 设置弹窗特别压缩 */
+  .ai-settings-modal { gap: 6px; }
+  .ai-settings-modal .settings-section { gap: 4px; }
+  .ai-settings-modal .settings-section h4 { font-size: 0.78rem; margin-bottom: 4px; }
+  .ai-settings-modal .ai-settings-field { gap: 3px; }
+  .ai-settings-modal .ai-settings-field label { font-size: 0.72rem; }
+  .ai-settings-modal .ai-settings-desc { font-size: 0.72rem; }
+  .ai-settings-modal input, .ai-settings-modal select { font-size: 0.8rem; padding: 4px 8px; }
+  .ai-settings-modal .modal-actions { padding-top: 4px; gap: 8px; }
+  .ai-settings-modal .modal-actions .btn { font-size: 0.8rem; padding: 5px 14px; }
+
+  /* ── 目击输入浮层 ── */
+  .sighting-popover { padding: 8px 10px; min-width: 180px; }
+  .popover-header span { font-size: 0.82rem; }
+  .popover-label { font-size: 0.72rem; }
+  .popover-input { font-size: 0.82rem; padding: 4px 6px; }
+
+  /* ── AI 结果面板 弹出模式 ── */
+  .ai-result-panel.popout {
+    left: 8px !important; top: 48px !important;
+    width: calc(100vw - 16px); max-height: 80vh;
+  }
+
+  /* mobile-ai-panel 独立面板 */
+  .mobile-ai-panel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .mobile-ai-panel.hidden { display: none !important; }
+  #mobile-ai-result-body {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    line-height: 1.75;
+    color: var(--text-primary);
+  }
 }

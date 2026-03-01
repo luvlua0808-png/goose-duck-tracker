@@ -37,6 +37,8 @@ const Phase3 = (() => {
 
     // 初始化拖拽连线事件
     _initGroupDragEvents();
+    _initMobileRoleModal();
+    _initMobileNoteModal();
 
     // resize/scroll 时重新计算坐标并刷新连线
     window.addEventListener('resize', () => {
@@ -149,10 +151,24 @@ const Phase3 = (() => {
       header.appendChild(roleTag);
     }
 
+    // 手机横屏：+角色 小按钮
+    const isMobileLandscape = window.matchMedia('(max-width:960px) and (orientation:landscape)').matches;
+    if (isMobileLandscape) {
+      const rolePickBtn = document.createElement('button');
+      rolePickBtn.className = 'role-pick-btn';
+      rolePickBtn.textContent = p.role ? '✎' : '+';
+      rolePickBtn.title = '选择角色';
+      rolePickBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        _openMobileRoleModal(num);
+      });
+      header.appendChild(rolePickBtn);
+    }
+
     header.appendChild(trustBtn);
     card.appendChild(header);
 
-    // ── 行2：阵营按钮 + 角色搜索 横排 ──
+    // ── 行2：阵营按钮 + 备注（手机） / 角色搜索（桌面）横排 ──
     const row2 = document.createElement('div');
     row2.className = 'card-row2';
 
@@ -175,41 +191,51 @@ const Phase3 = (() => {
       factionBtns.appendChild(btn);
     });
 
-    const roleWrapper = document.createElement('div');
-    roleWrapper.className = 'role-search-wrapper';
-    roleWrapper.style.flex = '1';
-
-    const roleInput = document.createElement('input');
-    roleInput.type = 'text';
-    roleInput.className = 'role-search-input';
-    roleInput.placeholder = '搜索角色…';
-    roleInput.value = p.role || '';
-    roleInput.autocomplete = 'off';
-
-    const dropdown = document.createElement('div');
-    dropdown.className = 'role-dropdown';
-
-    roleInput.addEventListener('input', () => _showRoleDropdown(roleInput, dropdown, num));
-    roleInput.addEventListener('focus', () => _showRoleDropdown(roleInput, dropdown, num));
-    roleInput.addEventListener('keydown', e => {
-      if (e.key === 'Escape') dropdown.classList.remove('open');
-    });
-    document.addEventListener('click', e => {
-      if (!roleWrapper.contains(e.target)) dropdown.classList.remove('open');
-    }, { capture: true });
-
-    roleWrapper.appendChild(roleInput);
-    roleWrapper.appendChild(dropdown);
-
     row2.appendChild(factionBtns);
-    row2.appendChild(roleWrapper);
+
+    if (isMobileLandscape) {
+      // 手机横屏：行2 放备注文本（点击弹modal输入，不在卡片内放textarea）
+      const noteText = (p.notes || {})[round] || '';
+      const noteEl = document.createElement('div');
+      noteEl.className = 'card-notes-tap';
+      noteEl.textContent = noteText || '备注';
+      noteEl.title = '点击编辑备注';
+      noteEl.addEventListener('click', e => {
+        e.stopPropagation();
+        _openMobileNoteModal(num, round);
+      });
+      row2.appendChild(noteEl);
+    } else {
+      // 桌面：行2 放角色搜索
+      const roleWrapper = document.createElement('div');
+      roleWrapper.className = 'role-search-wrapper';
+      roleWrapper.style.flex = '1';
+      const roleInput = document.createElement('input');
+      roleInput.type = 'text';
+      roleInput.className = 'role-search-input';
+      roleInput.placeholder = '搜索角色…';
+      roleInput.value = p.role || '';
+      roleInput.autocomplete = 'off';
+      const dropdown = document.createElement('div');
+      dropdown.className = 'role-dropdown';
+      roleInput.addEventListener('input', () => _showRoleDropdown(roleInput, dropdown, num));
+      roleInput.addEventListener('focus', () => _showRoleDropdown(roleInput, dropdown, num));
+      roleInput.addEventListener('keydown', e => { if (e.key === 'Escape') dropdown.classList.remove('open'); });
+      document.addEventListener('click', e => {
+        if (!roleWrapper.contains(e.target)) dropdown.classList.remove('open');
+      }, { capture: true });
+      roleWrapper.appendChild(roleInput);
+      roleWrapper.appendChild(dropdown);
+      row2.appendChild(roleWrapper);
+    }
+
     card.appendChild(row2);
 
-    // ── 行3：目击记录 + 备注 横排 ──
+    // ── 行3：目击记录（手机）/ 目击+备注（桌面）横排 ──
     const row3 = document.createElement('div');
     row3.className = 'card-row3';
 
-    // 目击记录（左侧固定宽）
+    // 目击记录
     const sightings = State.getPlayerSightings(num);
     const sightDiv = document.createElement('div');
     sightDiv.className = 'card-sightings';
@@ -217,7 +243,6 @@ const Phase3 = (() => {
     sightLabel.className = 'card-section-label';
     sightLabel.textContent = '目击';
     sightDiv.appendChild(sightLabel);
-
     if (sightings.length === 0) {
       const empty = document.createElement('span');
       empty.className = 'no-sighting';
@@ -231,35 +256,150 @@ const Phase3 = (() => {
         sightDiv.appendChild(entry);
       });
     }
-
-    // 备注（右侧自适应）
-    const notesDiv = document.createElement('div');
-    notesDiv.className = 'card-notes';
-    const notesLabel = document.createElement('div');
-    notesLabel.className = 'card-section-label';
-    notesLabel.textContent = '备注';
-    notesDiv.appendChild(notesLabel);
-
-    const textarea = document.createElement('textarea');
-    // 合并历史备注为 placeholder 提示，当前轮次可编辑
-    const prevNotes = Object.entries(p.notes || {})
-      .sort(([a], [b]) => Number(a) - Number(b))
-      .filter(([r, t]) => Number(r) !== round && t && t.trim())
-      .map(([r, t]) => `[R${r}]${t}`)
-      .join(' ');
-    textarea.value = (p.notes || {})[round] || '';
-    textarea.placeholder = prevNotes || `R${round}备注…`;
-    textarea.title = prevNotes ? `历史备注：${prevNotes}` : '';
-    textarea.addEventListener('blur', () => {
-      State.setNote(num, round, textarea.value);
-    });
-    notesDiv.appendChild(textarea);
-
     row3.appendChild(sightDiv);
-    row3.appendChild(notesDiv);
+
+    if (!isMobileLandscape) {
+      // 桌面：行3 额外放备注
+      const notesDiv = document.createElement('div');
+      notesDiv.className = 'card-notes';
+      const notesLabel = document.createElement('div');
+      notesLabel.className = 'card-section-label';
+      notesLabel.textContent = '备注';
+      notesDiv.appendChild(notesLabel);
+      const prevNotes = Object.entries(p.notes || {})
+        .sort(([a], [b]) => Number(a) - Number(b))
+        .filter(([r, t]) => Number(r) !== round && t && t.trim())
+        .map(([r, t]) => `[R${r}]${t}`).join(' ');
+      const textarea = document.createElement('textarea');
+      textarea.value = (p.notes || {})[round] || '';
+      textarea.placeholder = prevNotes || `R${round}备注…`;
+      textarea.title = prevNotes ? `历史备注：${prevNotes}` : '';
+      textarea.addEventListener('blur', () => State.setNote(num, round, textarea.value));
+      notesDiv.appendChild(textarea);
+      row3.appendChild(notesDiv);
+    }
+
     card.appendChild(row3);
 
     return card;
+  }
+
+  // ── 手机角色选择 Modal ─────────────────────────────────────
+
+  let _mobileRoleTarget = null;
+
+  function _initMobileRoleModal() {
+    const modal   = document.getElementById('mobile-role-modal');
+    const closeBtn = document.getElementById('mobile-role-modal-close');
+    const searchInput = document.getElementById('mobile-role-search');
+    const list    = document.getElementById('mobile-role-list');
+    if (!modal) return;
+
+    closeBtn.addEventListener('click', () => _closeMobileRoleModal());
+    modal.addEventListener('click', e => { if (e.target === modal) _closeMobileRoleModal(); });
+
+    searchInput.addEventListener('input', () => {
+      _renderMobileRoleList(searchInput.value.trim());
+    });
+  }
+
+  function _openMobileRoleModal(playerNum) {
+    _mobileRoleTarget = playerNum;
+    const modal = document.getElementById('mobile-role-modal');
+    const title = document.getElementById('mobile-role-modal-title');
+    const searchInput = document.getElementById('mobile-role-search');
+    if (!modal) return;
+    title.textContent = `${playerNum}号 — 选择角色`;
+    searchInput.value = '';
+    _renderMobileRoleList('');
+    modal.classList.remove('hidden');
+    setTimeout(() => searchInput.focus(), 100);
+  }
+
+  function _closeMobileRoleModal() {
+    const modal = document.getElementById('mobile-role-modal');
+    if (modal) modal.classList.add('hidden');
+    _mobileRoleTarget = null;
+  }
+
+  // ── 手机备注 Modal ─────────────────────────────────────────
+
+  let _mobileNoteTarget = null;
+
+  function _initMobileNoteModal() {
+    const modal    = document.getElementById('mobile-note-modal');
+    const closeBtn = document.getElementById('mobile-note-modal-close');
+    const input    = document.getElementById('mobile-note-input');
+    if (!modal) return;
+    const _close = () => {
+      modal.classList.add('hidden');
+      if (_mobileNoteTarget) {
+        const { playerNum, round } = _mobileNoteTarget;
+        _refreshCard(playerNum);
+      }
+      _mobileNoteTarget = null;
+    };
+    closeBtn.addEventListener('click', _close);
+    modal.addEventListener('click', e => { if (e.target === modal) _close(); });
+    // 实时自动保存
+    input.addEventListener('input', () => {
+      if (!_mobileNoteTarget) return;
+      const { playerNum, round } = _mobileNoteTarget;
+      State.setNote(playerNum, round, input.value);
+    });
+  }
+
+  function _openMobileNoteModal(playerNum, round) {
+    _mobileNoteTarget = { playerNum, round };
+    const modal = document.getElementById('mobile-note-modal');
+    const title = document.getElementById('mobile-note-modal-title');
+    const input = document.getElementById('mobile-note-input');
+    if (!modal) return;
+    const { players } = State.get();
+    const p = players[playerNum];
+    title.textContent = `${playerNum}号 — 备注`;
+    input.value = (p && p.notes && p.notes[round]) || '';
+    modal.classList.remove('hidden');
+    setTimeout(() => input.focus(), 100);
+  }
+
+  function _renderMobileRoleList(query) {
+    const list = document.getElementById('mobile-role-list');
+    if (!list) return;
+    const results = searchRoles(query).slice(0, 20);
+    list.innerHTML = '';
+    // 清除当前角色选项
+    const clearItem = document.createElement('div');
+    clearItem.className = 'mobile-role-item';
+    clearItem.innerHTML = '<span style="color:var(--text-muted);font-style:italic">清除角色</span>';
+    clearItem.addEventListener('click', () => {
+      if (_mobileRoleTarget) {
+        State.setRole(_mobileRoleTarget, null);
+        _refreshCard(_mobileRoleTarget);
+        _renderFactionStats();
+      }
+      _closeMobileRoleModal();
+    });
+    list.appendChild(clearItem);
+
+    results.forEach(role => {
+      const item = document.createElement('div');
+      item.className = 'mobile-role-item';
+      const factionMeta = FACTION_META[role.faction];
+      item.innerHTML = `
+        <span>${role.name}</span>
+        <span class="role-option-faction ${role.faction}">${factionMeta.icon} ${factionMeta.label}</span>
+      `;
+      item.addEventListener('click', () => {
+        if (_mobileRoleTarget) {
+          State.setRole(_mobileRoleTarget, role.name);
+          _refreshCard(_mobileRoleTarget);
+          _renderFactionStats();
+        }
+        _closeMobileRoleModal();
+      });
+      list.appendChild(item);
+    });
   }
 
   function _showRoleDropdown(input, dropdown, playerNum) {
@@ -280,14 +420,16 @@ const Phase3 = (() => {
         <span>${role.name}</span>
         <span class="role-option-faction ${role.faction}">${factionMeta.icon} ${factionMeta.label}</span>
       `;
-      opt.addEventListener('mousedown', e => {
+      const _selectRole = e => {
         e.preventDefault();
         input.value = role.name;
         dropdown.classList.remove('open');
         State.setRole(playerNum, role.name);
         _refreshCard(playerNum);
         _renderFactionStats();
-      });
+      };
+      opt.addEventListener('mousedown', _selectRole);
+      opt.addEventListener('touchstart', _selectRole, { passive: false });
       dropdown.appendChild(opt);
     });
 
@@ -308,9 +450,14 @@ const Phase3 = (() => {
 
   // ── 阵营统计面板 ──────────────────────────────────────────
 
-  function _renderFactionStats() {
+  function renderMobileStats() {
+    const el = document.getElementById('mobile-faction-stats');
+    if (el) _renderFactionStats(el);
+  }
+
+  function _renderFactionStats(container) {
     const stats = State.getFactionStats();
-    const container = document.getElementById('faction-stats');
+    if (!container) container = document.getElementById('faction-stats');
     container.innerHTML = '';
 
     const factionOrder = [
@@ -451,72 +598,64 @@ const Phase3 = (() => {
     const svg = document.getElementById('group-lines-svg');
     const wrapper = document.querySelector('.player-cards-wrapper');
 
-    // 从色点开始拖拽（色点有 pointer-events: auto）
-    grid.addEventListener('mousedown', (e) => {
-      const dot = e.target.closest('.player-color-dot');
-      if (!dot) return;
-
+    // ── 拖拽开始（公共逻辑） ────────────────────────────────────
+    function _startDrag(dot, clientX, clientY) {
       const card = dot.closest('.player-card');
-      if (!card) return;
+      if (!card) return false;
       const fromPlayer = parseInt(card.dataset.player);
-      if (!fromPlayer) return;
-
-      e.preventDefault();
-      e.stopPropagation();
+      if (!fromPlayer) return false;
 
       _updateDotPositions();
       const fromPos = _dotPositions[fromPlayer];
-      if (!fromPos) return;
+      if (!fromPos) return false;
 
       _dragState.isDragging = true;
       _dragState.fromPlayer = fromPlayer;
       _dragState.fromColor = PLAYER_COLORS[fromPlayer] || '#888';
       _dragState.fromPos = fromPos;
 
-      // 创建预览线（贝塞尔曲线 path）
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       line.classList.add('group-line-preview');
       line.setAttribute('stroke', _dragState.fromColor);
       line.setAttribute('d', `M ${fromPos.x} ${fromPos.y} C ${fromPos.x} ${fromPos.y}, ${fromPos.x} ${fromPos.y}, ${fromPos.x} ${fromPos.y}`);
-
       svg.appendChild(line);
       _dragState.previewLine = line;
-    });
+      return true;
+    }
 
-    // 鼠标移动 - 更新预览线
-    document.addEventListener('mousemove', (e) => {
+    // ── 拖拽移动（公共逻辑） ────────────────────────────────────
+    function _moveDrag(clientX, clientY) {
       if (!_dragState.isDragging || !_dragState.previewLine) return;
-
       const wrapperRect = wrapper.getBoundingClientRect();
-      const x = e.clientX - wrapperRect.left;
-      const y = e.clientY - wrapperRect.top;
-
+      const x = clientX - wrapperRect.left;
+      const y = clientY - wrapperRect.top;
       const fp = _dragState.fromPos;
       if (fp) {
         const dx = Math.abs(x - fp.x) * 0.3;
         const d = `M ${fp.x} ${fp.y} C ${fp.x + dx} ${fp.y} ${x - dx} ${y} ${x} ${y}`;
         _dragState.previewLine.setAttribute('d', d);
       }
-    });
+    }
 
-    // 鼠标松开 - 完成或取消连接
-    document.addEventListener('mouseup', (e) => {
+    // ── 拖拽结束（公共逻辑） ────────────────────────────────────
+    function _endDrag(clientX, clientY) {
       if (!_dragState.isDragging) return;
 
-      const card = e.target.closest('.player-card');
-      const toPlayer = card ? parseInt(card.dataset.player) : null;
-
-      // 移除预览线
       if (_dragState.previewLine) {
         _dragState.previewLine.remove();
         _dragState.previewLine = null;
       }
 
-      // 如果松开在有效目标上且不是同一个玩家，创建连接
+      const el = document.elementFromPoint(clientX, clientY);
+      const card = el ? el.closest('.player-card') : null;
+      const toPlayer = card ? parseInt(card.dataset.player) : null;
+
       if (toPlayer && toPlayer !== _dragState.fromPlayer) {
         const success = State.addGroupLink(_dragState.fromPlayer, toPlayer);
         if (success) {
           _renderGroupLines();
+          const { round } = State.get();
+          if (typeof umami !== 'undefined') umami.track('player_connect', { round });
         }
       }
 
@@ -524,6 +663,45 @@ const Phase3 = (() => {
       _dragState.fromPlayer = null;
       _dragState.fromColor = null;
       _dragState.fromPos = null;
+    }
+
+    // ── Mouse 事件 ───────────────────────────────────────────────
+    grid.addEventListener('mousedown', (e) => {
+      const dot = e.target.closest('.player-color-dot');
+      if (!dot) return;
+      e.preventDefault();
+      e.stopPropagation();
+      _startDrag(dot, e.clientX, e.clientY);
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      _moveDrag(e.clientX, e.clientY);
+    });
+
+    document.addEventListener('mouseup', (e) => {
+      _endDrag(e.clientX, e.clientY);
+    });
+
+    // ── Touch 事件（移动端并存） ──────────────────────────────────
+    grid.addEventListener('touchstart', (e) => {
+      const dot = e.target.closest('.player-color-dot');
+      if (!dot) return;
+      e.preventDefault();
+      const t = e.touches[0];
+      _startDrag(dot, t.clientX, t.clientY);
+    }, { passive: false });
+
+    document.addEventListener('touchmove', (e) => {
+      if (!_dragState.isDragging) return;
+      e.preventDefault();
+      const t = e.touches[0];
+      _moveDrag(t.clientX, t.clientY);
+    }, { passive: false });
+
+    document.addEventListener('touchend', (e) => {
+      if (!_dragState.isDragging) return;
+      const t = e.changedTouches[0];
+      _endDrag(t.clientX, t.clientY);
     });
 
     // 连线点击选择（path 元素有 pointer-events: stroke，可以接收事件）
@@ -596,5 +774,5 @@ const Phase3 = (() => {
     });
   }
 
-  return { init, render };
+  return { init, render, renderMobileStats };
 })();

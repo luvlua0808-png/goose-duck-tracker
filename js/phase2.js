@@ -25,6 +25,8 @@ const Phase2 = (() => {
       } else if (typeof AI !== 'undefined' && AI && typeof AI.clearResult === 'function') {
         AI.clearResult();
       }
+      const { round } = State.get();
+      if (typeof umami !== 'undefined') umami.track('enter_meeting', { round });
       State.commitRound();
       App.switchPhase('meeting');
     });
@@ -127,6 +129,8 @@ const Phase2 = (() => {
 
     function _startRecognition(onResult, onEnd) {
       const aliConfig = AI.getAliyunConfig();
+      const { round, phase } = State.get();
+      if (typeof umami !== 'undefined') umami.track('voice_start', { service: aliConfig.service, page: phase });
       const hotWords = _getHotWords();
       if (aliConfig.service === 'aliyun' && aliConfig.appKey && aliConfig.akId && aliConfig.akSecret) {
         AliyunASR.start(
@@ -253,6 +257,11 @@ const Phase2 = (() => {
     btn.addEventListener('click', e => {
       e.preventDefault();
       e.stopPropagation();
+      // HTTP 非 localhost 环境下麦克风权限会被浏览器拒绝
+      if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        _showToast('语音识别需要 HTTPS 环境，请使用部署版本');
+        return;
+      }
       if (_voiceListening) { stopListening(); } else { startListening(); }
     });
 
@@ -292,6 +301,7 @@ const Phase2 = (() => {
 
   function _renderMap(mapDef) {
     const wrapper   = document.querySelector('.map-wrapper');
+    const canvasEl  = document.getElementById('map-canvas');
     const svgEl     = document.getElementById('map-svg');
     const nodesEl   = document.getElementById('map-nodes');
     const { currentPath, currentSightings } = State.get();
@@ -299,8 +309,11 @@ const Phase2 = (() => {
     // 设置容器尺寸 & 地图主题 class
     const W = mapDef.width + 40;
     const H = mapDef.height + 40;
-    wrapper.style.minWidth  = W + 'px';
-    wrapper.style.minHeight = H + 'px';
+    // map-canvas 撑开 wrapper 的可滚动区域
+    canvasEl.style.width  = W + 'px';
+    canvasEl.style.height = H + 'px';
+    nodesEl.style.width   = W + 'px';
+    nodesEl.style.height  = H + 'px';
     wrapper.className = wrapper.className.replace(/\bmap-theme-\S+/g, '').trim();
     wrapper.classList.add(`map-theme-${mapDef.id}`);
     svgEl.setAttribute('width',  W);

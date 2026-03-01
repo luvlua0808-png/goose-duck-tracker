@@ -5,8 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>鹅鸭杀记牌助手</title>
   <link rel="stylesheet" href="css/styles.css" />
+  <script defer src="https://cloud.umami.is/script.js" data-website-id="74bccc2d-705d-4fef-ba82-875f101e6d85"></script>
 </head>
 <body tabindex="-1">
+
+  <!-- ===== 竖屏旋转提示蒙层 ===== -->
+  <div id="rotate-overlay" class="rotate-overlay">
+    <div class="rotate-content">
+      <div class="rotate-icon">📱</div>
+      <div class="rotate-arrow">↻</div>
+      <p class="rotate-title">请旋转手机</p>
+      <p class="rotate-desc">本应用在横屏下使用体验更佳</p>
+    </div>
+  </div>
 
   <!-- ===== 顶部导航栏 ===== -->
   <header id="app-header">
@@ -120,8 +131,10 @@
             </div>
           </div>
           <div class="map-wrapper">
-            <svg id="map-svg" class="map-svg"></svg>
-            <div id="map-nodes" class="map-nodes"></div>
+            <div id="map-canvas" class="map-canvas">
+              <svg id="map-svg" class="map-svg"></svg>
+              <div id="map-nodes" class="map-nodes"></div>
+            </div>
           </div>
           <!-- 路径摘要 -->
           <div class="path-summary-box">
@@ -130,8 +143,10 @@
           </div>
         </div>
 
-        <!-- 右侧：操作面板 -->
-        <div class="game-side-panel">
+        <!-- 右侧：操作面板（手机横屏变底部抽屉） -->
+        <div class="game-side-panel" id="game-side-panel">
+          <button class="drawer-toggle" id="btn-drawer-toggle" type="button">目击 / 进入会议 ▲</button>
+          <div class="drawer-body">
           <div class="side-block">
             <h4>目击记录</h4>
             <div id="sighting-list" class="sighting-list">
@@ -149,6 +164,7 @@
           <div class="game-actions">
             <button class="btn btn-primary" id="btn-enter-meeting">进入会议 →</button>
           </div>
+          </div><!-- /.drawer-body -->
         </div>
 
       </div>
@@ -167,10 +183,24 @@
               <button class="btn btn-sm btn-secondary" id="btn-next-round">下一轮 →</button>
             </div>
           </div>
+          <!-- 手机横屏 Tab（桌面端由CSS隐藏） -->
+          <div class="mobile-meeting-tabs" id="mobile-meeting-tabs">
+            <button class="mobile-tab active" data-tab="cards" onclick="App.switchMobileTab('cards')">玩家</button>
+            <button class="mobile-tab" data-tab="stats" onclick="App.switchMobileTab('stats')">阵营</button>
+            <button class="mobile-tab" data-tab="ai" onclick="App.switchMobileTab('ai')">分析</button>
+          </div>
           <div class="player-cards-wrapper">
             <!-- SVG 连线画布层 -->
             <svg id="group-lines-svg" class="group-lines-svg"></svg>
             <div id="player-cards-grid" class="player-cards-grid"></div>
+          </div>
+          <!-- 手机横屏：阵营统计嵌入此面板，Tab切换显示 -->
+          <div id="mobile-stats-panel" class="mobile-stats-panel hidden">
+            <div id="mobile-faction-stats" class="faction-stats"></div>
+          </div>
+          <!-- 手机横屏：AI结果嵌入此面板，Tab切换显示 -->
+          <div id="mobile-ai-panel" class="mobile-ai-panel hidden">
+            <div id="mobile-ai-result-body" class="ai-result-body"></div>
           </div>
         </div>
 
@@ -305,6 +335,29 @@
     </div>
   </div>
 
+  <!-- ===== 手机端备注输入 Modal ===== -->
+  <div id="mobile-note-modal" class="mobile-role-modal hidden">
+    <div class="mobile-role-modal-box">
+      <div class="mobile-role-modal-header">
+        <span id="mobile-note-modal-title">备注</span>
+        <button id="mobile-note-modal-close" type="button">✕</button>
+      </div>
+      <textarea id="mobile-note-input" rows="4" placeholder="输入备注…" style="width:100%;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:0.9rem;padding:8px 10px;font-family:inherit;resize:none;box-sizing:border-box;"></textarea>
+    </div>
+  </div>
+
+  <!-- ===== 手机端角色选择 Modal ===== -->
+  <div id="mobile-role-modal" class="mobile-role-modal hidden">
+    <div class="mobile-role-modal-box">
+      <div class="mobile-role-modal-header">
+        <span id="mobile-role-modal-title">选择角色</span>
+        <button id="mobile-role-modal-close" type="button">✕</button>
+      </div>
+      <input id="mobile-role-search" type="text" placeholder="输入角色名搜索…" autocomplete="off" />
+      <div id="mobile-role-list" class="mobile-role-list"></div>
+    </div>
+  </div>
+
   <!-- ===== 节点目击输入浮层 ===== -->
   <div id="sighting-popover" class="sighting-popover hidden">
     <div class="popover-header">
@@ -317,15 +370,15 @@
   </div>
 
   <!-- ===== JS 模块 ===== -->
-  <script src="js/data.js"></script>
-  <script src="js/state.js"></script>
-  <script src="js/phase1.js"></script>
-  <script src="js/phase2.js"></script>
-  <script src="js/phase3.js"></script>
-  <script src="js/export.js"></script>
-  <script src="js/ai.js"></script>
-  <script src="js/aliyun-asr.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/data.js?v=20260301"></script>
+  <script src="js/state.js?v=20260301"></script>
+  <script src="js/phase1.js?v=20260301"></script>
+  <script src="js/phase2.js?v=20260301"></script>
+  <script src="js/phase3.js?v=20260301"></script>
+  <script src="js/export.js?v=20260301"></script>
+  <script src="js/ai.js?v=20260301"></script>
+  <script src="js/aliyun-asr.js?v=20260301"></script>
+  <script src="js/app.js?v=20260301"></script>
 
   <!-- 署名水印 -->
   <div id="watermark">made by luvlua</div>

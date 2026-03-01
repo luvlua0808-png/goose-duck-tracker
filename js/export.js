@@ -105,6 +105,8 @@ const Export = (() => {
   }
 
   function triggerEndGame() {
+    const { round } = State.get();
+    if (typeof umami !== 'undefined') umami.track('game_end', { totalRounds: round });
     // 显示结束弹窗
     document.getElementById('modal-end-game').classList.remove('hidden');
   }

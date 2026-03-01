@@ -53,7 +53,12 @@ const App = (() => {
     // 渲染对应阶段
     if (phase === 'init')    Phase1.render();
     if (phase === 'game')    Phase2.render();
-    if (phase === 'meeting') Phase3.render();
+    if (phase === 'meeting') {
+      Phase3.render();
+      // 手机横屏：重置Tab到"玩家"并重新绑定事件
+      _bindMobileMeetingTabs();
+      _switchMobileTab('cards');
+    }
 
     // 只有切到游戏/会议页时才更新 state phase（init页不覆盖，保留游戏进行中的状态）
     if (phase !== 'init') State.setPhase(phase);
@@ -109,6 +114,53 @@ const App = (() => {
     cancelBtn.addEventListener('click',  handleCancel);
   }
 
+  function _bindDrawerToggle() {
+    const btn = document.getElementById('btn-drawer-toggle');
+    const body = document.querySelector('.drawer-body');
+    if (!btn || !body) return;
+    btn.addEventListener('click', () => {
+      const isOpen = body.classList.toggle('open');
+      btn.classList.toggle('open', isOpen);
+      btn.textContent = isOpen ? '目击 / 进入会议 ▼' : '目击 / 进入会议 ▲';
+    });
+  }
+
+  function _switchMobileTab(target) {
+    const tabs         = document.getElementById('mobile-meeting-tabs');
+    const cardsWrapper = document.querySelector('.player-cards-wrapper');
+    const statsPanel   = document.getElementById('mobile-stats-panel');
+    const aiPanel      = document.getElementById('mobile-ai-panel');
+    if (tabs) tabs.querySelectorAll('.mobile-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === target));
+    // 全部隐藏（移除hidden class 再设 display:none，避免!important冲突）
+    [cardsWrapper, statsPanel, aiPanel].forEach(el => {
+      if (el) { el.classList.remove('hidden'); el.style.display = 'none'; }
+    });
+    if (target === 'cards') {
+      if (cardsWrapper) cardsWrapper.style.display = '';
+    } else if (target === 'stats') {
+      if (statsPanel) { statsPanel.style.display = 'flex'; Phase3.renderMobileStats(); }
+    } else if (target === 'ai') {
+      if (aiPanel) {
+        aiPanel.style.display = 'flex';
+        if (typeof AI !== 'undefined' && AI.triggerMobile) AI.triggerMobile();
+      }
+    }
+  }
+
+  function _bindMobileMeetingTabs() {
+    const tabs = document.getElementById('mobile-meeting-tabs');
+    if (!tabs) return;
+    // 用克隆替换，清除所有已有listener
+    const fresh = tabs.cloneNode(true);
+    tabs.parentNode.replaceChild(fresh, tabs);
+    fresh.querySelectorAll('.mobile-tab').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        _switchMobileTab(this.dataset.tab);
+      });
+    });
+  }
+
   function init() {
     // 加载持久化状态
     State.loadState();
@@ -123,6 +175,8 @@ const App = (() => {
     // 绑定全局控件
     _bindNavBtns();
     _bindResetRound();
+    _bindDrawerToggle();
+    _bindMobileMeetingTabs();
 
     // 恢复上次阶段
     const savedPhase = State.get().phase;
@@ -140,5 +194,5 @@ const App = (() => {
   // 页面加载完成后启动
   document.addEventListener('DOMContentLoaded', init);
 
-  return { switchPhase, init };
+  return { switchPhase, init, switchMobileTab: _switchMobileTab };
 })();

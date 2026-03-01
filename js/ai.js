@@ -557,6 +557,19 @@ const AI = (() => {
 
     // AI 分析按钮
     document.getElementById('btn-ai-analyze').addEventListener('click', () => {
+      const isMobile = window.matchMedia('(max-width:960px) and (orientation:landscape)').matches;
+      if (isMobile) {
+        // 手机端：切到 AI tab 再触发
+        const tabs = document.getElementById('mobile-meeting-tabs');
+        if (tabs) {
+          tabs.querySelectorAll('.mobile-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'ai'));
+          document.querySelector('.player-cards-wrapper')?.classList.add('hidden');
+          document.getElementById('mobile-stats-panel')?.classList.add('hidden');
+          document.getElementById('mobile-ai-panel')?.classList.remove('hidden');
+        }
+        _runMobileAI();
+        return;
+      }
       if (!getApiKey()) {
         _showError('no_key');
         document.getElementById('ai-result-panel').classList.remove('hidden');
@@ -567,8 +580,9 @@ const AI = (() => {
         document.getElementById('ai-result-panel').classList.remove('hidden');
         return;
       }
+      const { round } = State.get();
+      if (typeof umami !== 'undefined') umami.track('ai_reasoning', { round });
       _showLoading();
-      // 等一帧再开始，让 loading UI 先渲染
       requestAnimationFrame(() => _renderStream());
     });
 
@@ -584,5 +598,55 @@ const AI = (() => {
     _initDrag();
   }
 
-  return { init, clearResult, getAliyunConfig, saveAliyunConfig };
+  // ── 手机端 AI 输出 ────────────────────────────────────────
+
+  function _runMobileAI() {
+    const body = document.getElementById('mobile-ai-result-body');
+    if (!body) return;
+    if (!getApiKey()) {
+      body.innerHTML = '<div class="ai-error-msg">⚙️ 请先在右上角「AI设置」中填入 API Key。</div>';
+      return;
+    }
+    if (!hasEnoughData()) {
+      body.innerHTML = '<div class="ai-error-msg">📋 当前记录信息不足，建议补充更多玩家备注或路径记录后再分析。</div>';
+      return;
+    }
+    const { round } = State.get();
+    if (typeof umami !== 'undefined') umami.track('ai_reasoning', { round });
+    body.innerHTML = '<div class="ai-loading"><span class="ai-spinner"></span> AI 正在分析中…</div>';
+
+    const pre = document.createElement('div');
+    pre.className = 'ai-stream-text';
+
+    let fullText = '';
+    callAPI(
+      chunk => {
+        if (body.querySelector('.ai-loading')) { body.innerHTML = ''; body.appendChild(pre); }
+        fullText += chunk;
+        pre.innerHTML = _formatAIText(fullText) + '<span class="ai-cursor">▌</span>';
+        body.scrollTop = body.scrollHeight;
+      },
+      () => {
+        pre.innerHTML = _formatAIText(fullText);
+        body.scrollTop = body.scrollHeight;
+      },
+      type => {
+        const msgs = {
+          no_key: '⚙️ 请先填入 API Key。',
+          invalid_key: '❌ API Key 无效。',
+          no_balance: '❌ 账户余额不足。',
+          network: '❌ 网络请求失败。',
+          api_error: '❌ API 调用失败。',
+          stream_error: '❌ 数据流读取失败。',
+        };
+        body.innerHTML = `<div class="ai-error-msg">${msgs[type] || msgs.api_error}</div>`;
+      }
+    );
+  }
+
+  function triggerMobile() {
+    _runMobileAI();
+  }
+
+  return { init, clearResult, getAliyunConfig, saveAliyunConfig, triggerMobile };
 })();
