@@ -20,6 +20,7 @@ const ROLES = [
   { name: '法医',     faction: 'goose',   initials: 'fy',   aliases: ['法'] },
   { name: '探测员',   faction: 'goose',   initials: 'tcy',  aliases: ['探测'] },
   { name: '大白鹅',   faction: 'goose',   initials: 'dbe'  },
+  { name: '肉汁',     faction: 'goose',   initials: 'rz'   },
 
   // 🦆 鸭阵营 (10)
   { name: '专业杀手', faction: 'duck',    initials: 'zyss' },
@@ -33,6 +34,7 @@ const ROLES = [
   { name: '掠夺者',   faction: 'duck',    initials: 'ldz'  },
   { name: '狙击手',   faction: 'duck',    initials: 'jjs',  aliases: ['狙击'] },
   { name: '鸭子',     faction: 'duck',    initials: 'yz'   },
+  { name: '小丑',     faction: 'duck',    initials: 'xc'   },
 
   // 🕊️ 中立阵营 (7)
   { name: '呆呆鸟',   faction: 'neutral', initials: 'ddn'  },
