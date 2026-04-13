@@ -316,7 +316,12 @@ const Phase1 = (() => {
       document.querySelectorAll('#open-roles-container .role-chip').forEach(chip => {
         const nameMatch = chip.dataset.role.toLowerCase().includes(q);
         const initialsMatch = (chip.dataset.initials || '').startsWith(q);
-        chip.style.display = (!q || nameMatch || initialsMatch) ? '' : 'none';
+        const visible = (!q || nameMatch || initialsMatch) ? '' : 'none';
+        chip.style.display = visible;
+        const nextEl = chip.nextElementSibling;
+        if (nextEl && nextEl.classList.contains('draft-btn')) {
+          nextEl.style.display = visible;
+        }
       });
       document.querySelectorAll('#open-roles-container .role-faction-group').forEach(group => {
         const anyVisible = [...group.querySelectorAll('.role-chip')].some(c => c.style.display !== 'none');
@@ -374,11 +379,14 @@ const Phase1 = (() => {
         letterMap[letter].forEach(role => {
           const chip = document.createElement('span');
           chip.className = 'role-chip';
+          if (role.disabled) chip.classList.add('role-chip-disabled');
           chip.textContent = role.name;
           chip.dataset.role = role.name;
           chip.dataset.faction = faction;
           chip.dataset.initials = role.initials || '';
-          chip.addEventListener('click', () => _toggleOpenRole(role.name, faction, chip));
+          if (!role.disabled) {
+            chip.addEventListener('click', () => _toggleOpenRole(role.name, faction, chip));
+          }
           chipsWrap.appendChild(chip);
         });
         row.appendChild(chipsWrap);
@@ -421,9 +429,10 @@ const Phase1 = (() => {
       }
 
       const matched = ROLES.filter(r =>
-        r.name.includes(query) ||
+        !r.disabled &&
+        (r.name.includes(query) ||
         (r.initials && r.initials.startsWith(query)) ||
-        (r.aliases && r.aliases.some(a => a.includes(query)))
+        (r.aliases && r.aliases.some(a => a.includes(query))))
       );
 
       if (matched.length > 0) {
@@ -508,13 +517,145 @@ const Phase1 = (() => {
     _updateOpenRoleChips();
   }
 
+  // ── 轮抽号码弹出面板 ──
+  let _activeDraftPopover = null;
+
+  function _closeDraftPopover() {
+    if (_activeDraftPopover) {
+      _activeDraftPopover.remove();
+      _activeDraftPopover = null;
+    }
+  }
+
+  function _openDraftPopover(roleName, anchorEl) {
+    _closeDraftPopover();
+    const config = State.get().config;
+    const drafts = config.openRoleDrafts || {};
+    const playerCount = config.playerCount;
+    const currentNum = drafts[roleName] || null;
+
+    // Collect used numbers (by other roles)
+    const usedNums = new Set();
+    Object.entries(drafts).forEach(([r, n]) => {
+      if (r !== roleName && n) usedNums.add(n);
+    });
+
+    const popover = document.createElement('div');
+    popover.className = 'draft-popover';
+
+    const grid = document.createElement('div');
+    grid.className = 'draft-grid';
+
+    // Clear button
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'draft-num draft-num-clear';
+    clearBtn.textContent = '✕';
+    clearBtn.title = '清除号码';
+    clearBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const d = { ...(State.get().config.openRoleDrafts || {}) };
+      delete d[roleName];
+      State.updateConfig('openRoleDrafts', d);
+      _closeDraftPopover();
+      _updateOpenRoleChips();
+    });
+    grid.appendChild(clearBtn);
+
+    for (let i = 1; i <= playerCount; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'draft-num';
+      btn.textContent = i;
+      if (i === currentNum) btn.classList.add('active');
+      if (usedNums.has(i)) {
+        btn.classList.add('used');
+        btn.disabled = true;
+      }
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const d = { ...(State.get().config.openRoleDrafts || {}) };
+        d[roleName] = i;
+        State.updateConfig('openRoleDrafts', d);
+        _closeDraftPopover();
+        _updateOpenRoleChips();
+      });
+      grid.appendChild(btn);
+    }
+
+    popover.appendChild(grid);
+
+    // Position relative to anchor
+    document.body.appendChild(popover);
+    const rect = anchorEl.getBoundingClientRect();
+    popover.style.position = 'fixed';
+    popover.style.left = rect.left + 'px';
+    popover.style.top = (rect.bottom + 4) + 'px';
+    // Clamp to viewport
+    requestAnimationFrame(() => {
+      const pr = popover.getBoundingClientRect();
+      if (pr.right > window.innerWidth - 8) {
+        popover.style.left = Math.max(8, window.innerWidth - pr.width - 8) + 'px';
+      }
+      if (pr.bottom > window.innerHeight - 8) {
+        popover.style.top = (rect.top - pr.height - 4) + 'px';
+      }
+    });
+
+    _activeDraftPopover = popover;
+  }
+
+  // Close popover on outside click
+  document.addEventListener('click', (e) => {
+    if (_activeDraftPopover && !_activeDraftPopover.contains(e.target) && !e.target.classList.contains('draft-btn')) {
+      _closeDraftPopover();
+    }
+  });
+
   function _updateOpenRoleChips() {
-    const openRoles = State.get().config.openRoles;
-    document.querySelectorAll('.role-chip').forEach(chip => {
+    const config = State.get().config;
+    const openRoles = config.openRoles;
+    const drafts = config.openRoleDrafts || {};
+    document.querySelectorAll('#open-roles-container .role-chip').forEach(chip => {
       const faction = chip.dataset.faction;
+      const roleName = chip.dataset.role;
+      const roleData = ROLES.find(r => r.name === roleName);
       chip.className = 'role-chip';
-      if (openRoles.includes(chip.dataset.role)) {
+      if (roleData && roleData.disabled) chip.classList.add('role-chip-disabled');
+      const isOpen = openRoles.includes(roleName);
+      if (isOpen) {
         chip.classList.add(`selected-${faction}`);
+      }
+
+      // Draft button management
+      let wrapper = chip.parentElement;
+      let draftBtn = wrapper.querySelector(`.draft-btn[data-role="${roleName}"]`);
+      if (isOpen) {
+        if (!draftBtn) {
+          draftBtn = document.createElement('button');
+          draftBtn.className = 'draft-btn';
+          draftBtn.dataset.role = roleName;
+          draftBtn.type = 'button';
+          draftBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            _openDraftPopover(roleName, draftBtn);
+          });
+          // Insert right after the chip
+          chip.after(draftBtn);
+        }
+        const num = drafts[roleName];
+        draftBtn.textContent = num ? `#${num}` : '#';
+        if (num) {
+          draftBtn.classList.add('draft-btn-active');
+        } else {
+          draftBtn.classList.remove('draft-btn-active');
+        }
+      } else {
+        if (draftBtn) draftBtn.remove();
+        // Also clean up draft data if role was deselected
+        if (drafts[roleName]) {
+          const d = { ...drafts };
+          delete d[roleName];
+          State.updateConfig('openRoleDrafts', d);
+        }
       }
     });
   }

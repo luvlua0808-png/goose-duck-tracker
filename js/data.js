@@ -44,7 +44,8 @@ const ROLES = [
   { name: '鹈鹕',     faction: 'neutral', initials: 'th',   aliases: ['提壶', '提鹄', '提湖', '啼壶', '鹈壶', '题壶', '体壶', '提葫', '特壶', '梯壶', '啼胡', '提胡', '踢壶', '替壶'] },
   { name: '猎鹰',     faction: 'neutral', initials: 'ly',   aliases: ['猎'] },
   { name: '布谷鸟',   faction: 'neutral', initials: 'bgn'  },
-  { name: '锦鸡',     faction: 'neutral', initials: 'jj',   aliases: ['近鸡', '金鸡', '紧鸡', '劲鸡', '锦基', '近基', '金基', '紧急', '紧', '锦'] },
+  { name: '锦鸡',     faction: 'neutral', initials: 'jj',   aliases: ['近鸡', '金鸡', '紧鸡', '劲鸡', '锦基', '近基', '金基', '紧急', '紧', '锦'], disabled: true },
+  { name: '渡鸦',     faction: 'neutral', initials: 'dy',   aliases: ['渡'] },
 ];
 
 const FACTION_META = {
@@ -454,6 +455,9 @@ const JINANG_DB = [
   { id: 125,  type: 'role', role: '布谷鸟',   text: '选冷门位置下蛋：地下室、隧道、地图边缘、障碍物后、管道口附近——高频活动区（食堂、会议）绝对不选。' },
   { id: 126, type: 'role', role: '布谷鸟',   text: '蛋与蛋间隔至少5个身位，避免被批量踩碎。会议结束后CD重置，立刻找偏僻角落补蛋，别在人群里出手。' },
   { id: 127, type: 'role', role: '布谷鸟',   text: '蛋数量达标后，躲进最隐蔽的角落（雕像后、坑位）静等60秒——小布谷鸟自动攻击，存活即胜利。' },
+  { id: 162, type: 'role', role: '渡鸦',     text: '前期低调观察，记住谁在带节奏、谁在滑水——你的胜利条件独立于双方阵营，信息就是你最大的筹码。' },
+  { id: 163, type: 'role', role: '渡鸦',     text: '两边都不要站死，谁强帮谁的对手——保持局势平衡才能拖到你的胜利条件达成。' },
+  { id: 164, type: 'role', role: '渡鸦',     text: '被怀疑时不要急着自证，模糊回答反而更安全——中立身份一旦暴露，鹅鸭都会想先处理你。' },
 
   // ── 混沌戏剧性锦囊（30条）──
   { id: 128, type: 'chaos', text: '在会议开始的第一秒，抢先说："先别说话，我数三秒，大家同时报出最怀疑的人。三——二——一——"不给任何人反应时间。' },

@@ -305,7 +305,7 @@ body {
   font-size: 0.78rem; font-weight: 800; color: var(--text-muted);
   width: 18px; text-align: center; flex-shrink: 0; font-family: monospace;
 }
-.role-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.role-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .role-chip {
   padding: 6px 16px; border-radius: 20px; border: 1px solid var(--border);
   background: var(--bg-elevated); color: var(--text-secondary);
@@ -315,6 +315,48 @@ body {
 .role-chip.selected-goose   { background: var(--goose-bg);   border-color: var(--goose-border);   color: var(--goose-color); }
 .role-chip.selected-duck    { background: var(--duck-bg);    border-color: var(--duck-border);    color: var(--duck-color); }
 .role-chip.selected-neutral { background: var(--neutral-bg); border-color: var(--neutral-border); color: var(--neutral-color); }
+.role-chip.role-chip-disabled {
+  opacity: 0.3; cursor: not-allowed; pointer-events: none;
+  text-decoration: line-through;
+}
+
+/* ── 轮抽号码按钮 ── */
+.draft-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 26px; height: 22px; padding: 0 5px;
+  border-radius: 11px; border: 1px solid var(--border);
+  background: var(--bg-surface); color: var(--text-muted);
+  font-size: 0.72rem; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: all var(--transition);
+  margin-left: -2px; vertical-align: middle;
+}
+.draft-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+.draft-btn-active {
+  background: var(--accent-blue-bg); border-color: var(--accent-blue); color: var(--accent-blue);
+}
+
+/* ── 轮抽号码弹出面板 ── */
+.draft-popover {
+  z-index: 1000; background: var(--bg-surface); border: 1px solid var(--border-light);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+  padding: 8px; min-width: 120px;
+}
+.draft-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+  gap: 4px;
+}
+.draft-num {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 28px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--bg-elevated);
+  color: var(--text-secondary); font-size: 0.82rem; font-weight: 500;
+  cursor: pointer; transition: all var(--transition); font-family: inherit;
+}
+.draft-num:hover:not(:disabled) { border-color: var(--accent-blue); color: var(--accent-blue); background: var(--accent-blue-bg); }
+.draft-num.active { background: var(--accent-blue); color: #0d1117; border-color: var(--accent-blue); font-weight: 700; }
+.draft-num.used { opacity: 0.25; cursor: not-allowed; }
+.draft-num-clear { color: var(--text-muted); font-size: 0.75rem; }
+.draft-num-clear:hover { color: var(--duck-color); border-color: var(--duck-border); }
 
 /* ── 阶段二：游戏 ── */
 .game-layout { display: flex; height: 100%; overflow: hidden; }
@@ -1162,6 +1204,8 @@ body {
   .btn-large     { padding: 5px 16px; font-size: 0.82rem; margin-top: 4px; }
   .open-roles-search { width: 160px; font-size: 0.72rem; padding: 3px 7px; }
   .role-chip { padding: 2px 7px; font-size: 0.7rem; }
+  .draft-btn { min-width: 22px; height: 18px; font-size: 0.62rem; padding: 0 3px; }
+  .draft-num { width: 26px; height: 24px; font-size: 0.72rem; }
   .role-faction-label { font-size: 0.75rem; }
   .role-letter-row { min-height: 22px; }
   .open-roles-groups { gap: 7px; }
@@ -1433,4 +1477,169 @@ body {
     line-height: 1.75;
     color: var(--text-primary);
   }
+}
+
+/* ============================================================
+   锦囊妙计
+   ============================================================ */
+
+/* 锦囊触发按钮 */
+.btn-jinang {
+  background: linear-gradient(135deg, #7c2d12 0%, #c2410c 50%, #ea580c 100%);
+  color: #fef3c7;
+  border: 1px solid #c2410c;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  position: relative;
+  transition: opacity var(--transition), box-shadow var(--transition);
+}
+.btn-jinang:hover:not(:disabled) {
+  opacity: 0.9;
+  box-shadow: 0 0 12px rgba(234,88,12,0.5);
+}
+.btn-jinang:disabled { opacity: 0.38; cursor: not-allowed; }
+.jinang-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 15px; height: 15px; border-radius: 50%;
+  background: rgba(254,243,199,0.3);
+  font-size: 0.68rem; font-weight: 700; margin-left: 4px;
+}
+
+/* 蒙层 */
+#jinang-overlay {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+}
+#jinang-overlay.hidden { display: none !important; }
+
+/* 卡片主体 */
+.jinang-reveal-card {
+  position: relative;
+  width: min(280px, 84vw);
+  max-height: 92vh;
+  background: #0d1117;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 18px 0 0;
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.9);
+  animation: jinang-card-in 0.35s ease;
+  overflow: hidden;
+}
+@keyframes jinang-card-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ① 顶部极小等宽标签行 */
+.jrc-header {
+  display: flex; align-items: center; gap: 7px;
+  margin-bottom: 10px;
+}
+.jrc-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 7px rgba(239,68,68,0.8);
+  flex-shrink: 0;
+}
+.jrc-header-label {
+  font-size: 0.52rem; font-family: 'Courier New', monospace;
+  letter-spacing: 0.25em; color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+}
+
+/* ② 主标题 — 视觉重心 */
+.jrc-main-title {
+  font-size: 1.4rem; font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: 0.1em;
+  margin-bottom: 14px;
+  text-align: center;
+  padding: 0 24px;
+  line-height: 1.3;
+}
+
+/* ③ 签文区 — 横排，居中，大字 */
+.jrc-vertical-wrap {
+  width: 100%;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.jrc-vertical-text {
+  display: block;
+  font-size: 1.1rem; line-height: 1.85;
+  font-family: Georgia, 'Songti SC', 'STSong', 'SimSun', serif;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: 0.06em;
+  font-weight: 400;
+  text-align: center;
+}
+
+/* 侧边编号（隐藏，保留元素避免 JS 报错） */
+.jrc-v-side { display: none; }
+
+/* ④ 底部分隔 + AUTHORIZED STRATEGIST */
+.jrc-footer {
+  width: 100%;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 12px 20px 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: 14px;
+}
+.jrc-footer-label {
+  font-size: 0.48rem; font-family: 'Courier New', monospace;
+  letter-spacing: 0.22em; color: rgba(255,255,255,0.28);
+  text-transform: uppercase;
+}
+
+/* ⑤ 角色 badge */
+.jrc-role-badge {
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 4px 14px;
+}
+.jrc-role-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 5px rgba(239,68,68,0.7);
+  flex-shrink: 0;
+}
+#jrc-role-name {
+  font-size: 0.9rem; font-weight: 600;
+  color: rgba(255,255,255,0.82);
+  letter-spacing: 0.05em;
+}
+
+/* ⑥ 领命按钮 */
+.jinang-confirm-btn {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.55);
+  padding: 13px 0; border-radius: 0 0 10px 10px;
+  font-size: 0.95rem; font-family: inherit;
+  font-weight: 400; letter-spacing: 0.35em;
+  cursor: pointer;
+  margin-top: 12px;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.jinang-confirm-btn:hover {
+  background: rgba(255,255,255,0.09);
+  color: rgba(255,255,255,0.85);
+}
+
+/* 手机端适配 */
+@media (max-width: 480px) {
+  .jinang-reveal-card  { width: min(250px, 88vw); padding-top: 14px; }
+  .jrc-main-title      { font-size: 1.2rem; margin-bottom: 10px; }
+  .jrc-vertical-text   { font-size: 0.88rem; height: min(120px, 25vh); }
+  .jrc-footer          { padding-top: 10px; margin-top: 10px; gap: 6px; }
+  .jinang-confirm-btn  { padding: 11px 0; margin-top: 10px; }
 }

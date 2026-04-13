@@ -13,6 +13,7 @@ const Jinang = (() => {
     const myRole  = state.myRole;
     const history = State.getJinangHistory();
     const usedIds = new Set(history);
+    const usedCount = State.getJinangUsed();
 
     // 过滤：排除已使用 + 排除不属于自己的角色专属
     const eligible = JINANG_DB.filter(j => {
@@ -26,18 +27,14 @@ const Jinang = (() => {
       ? eligible
       : JINANG_DB.filter(j => j.type !== 'role' || j.role === myRole);
 
-    // 加权：当前角色专属条目权重 ×4
-    const weighted = [];
-    pool.forEach(j => {
-      if (j.type === 'role' && j.role === myRole) {
-        weighted.push(j, j, j, j);
-      } else {
-        weighted.push(j);
-      }
+    const preferredType = ['role', 'general', 'chaos'][usedCount] || 'chaos';
+    const preferredPool = pool.filter(j => {
+      if (preferredType === 'role') return j.type === 'role' && j.role === myRole;
+      return j.type === preferredType;
     });
 
     // 最终兜底
-    const source = weighted.length > 0 ? weighted : pool.length > 0 ? pool : JINANG_DB;
+    const source = preferredPool.length > 0 ? preferredPool : pool.length > 0 ? pool : JINANG_DB;
     return source[Math.floor(Math.random() * source.length)];
   }
 

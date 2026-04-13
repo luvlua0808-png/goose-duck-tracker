@@ -15,12 +15,15 @@ function createDefaultState() {
       map: 'spaceship',
       factions: { goose: 8, duck: 3, neutral: 2 },
       openRoles: [],         // 明牌角色名数组
+      openRoleDrafts: {},    // 明牌角色轮抽号码 { 角色名: 号码 }
     },
     rounds: {},              // { 1: { path: [], sightings: { roomId: [playerNums] }, groups: [{from, to}] }, ... }
     players: {},             // { 1: { alive, trust, faction, role, notes: { roundN: '' } } }
     currentPath: [],         // 当前轮次路径 roomId 数组
     currentSightings: {},    // 当前轮次目击 { roomId: [nums] }
     currentGroups: [],       // 当前轮次抱团关系 [{ from: 1, to: 2 }, ...]
+    jinangUsed: 0,           // 本局已用锦囊次数
+    jinangHistory: [],       // 本局已抽锦囊 id 列表（防重复）
   };
 }
 
@@ -301,6 +304,28 @@ const State = {
 
   getGroupLinks() {
     return [...gameState.currentGroups];
+  },
+
+  // 锦囊妙计
+  useJinang() {
+    if (gameState.jinangUsed >= 3) return false;
+    gameState.jinangUsed += 1;
+    saveState();
+    return true;
+  },
+
+  addJinangHistory(id) {
+    if (!gameState.jinangHistory) gameState.jinangHistory = [];
+    gameState.jinangHistory.push(id);
+    saveState();
+  },
+
+  getJinangUsed() {
+    return gameState.jinangUsed || 0;
+  },
+
+  getJinangHistory() {
+    return gameState.jinangHistory || [];
   },
 
   reset() {
